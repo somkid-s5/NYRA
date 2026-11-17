@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 850" width="1440" height="850">
+<title>NYRA Interactive TUI - NEO TOKYO</title>
+<desc>Editable visual concept, not implemented software or real test output.</desc>
+<rect width="1440" height="850" fill="#100A1D"/>
+<rect x="29" y="26" width="1382" height="798" rx="8" fill="#1D1230" stroke="#A855F7" stroke-opacity="0.8" stroke-width="1.5"/>
+<rect x="29" y="26" width="1382" height="53" rx="8" fill="#2A153C" stroke="#A855F7" stroke-opacity="0.2" stroke-width="1.5"/>
+<circle cx="54" cy="53" r="6" fill="#FF35A7"/><circle cx="73" cy="53" r="6" fill="#F5C96D"/><circle cx="92" cy="53" r="6" fill="#9CF4C5"/>
+<text x="122" y="61" fill="#A855F7" font-size="20" font-weight="bold" font-family="Consolas,Menlo,DejaVu Sans Mono,monospace">NYRA  /  TERMINAL OPERATIONS CENTER</text>
+<text x="1043" y="60" fill="#B6A1C7" font-size="14" font-weight="normal" font-family="Consolas,Menlo,DejaVu Sans Mono,monospace">v0.1 | OFFLINE FIRST | SOUND ON</text>
+<rect x="52" y="96" width="1336" height="70" rx="8" fill="#2A153C" stroke="#A855F7" stroke-opacity="0.7" stroke-width="1.5"/>
+<text x="76" y="129" fill="#FF35A7" font-size="17" font-weight="bold" font-family="Consolas,Menlo,DejaVu Sans Mono,monospace">SEARCH /</text><text x="238" y="129" fill="#F5E7FF" font-size="22" font-weight="normal" font-family="Consolas,Menlo,DejaVu Sans Mono,monospace">check port 443</text>
+<text x="1150" y="129" fill="#B6A1C7" font-size="17" font-weight="normal" font-family="Consolas,Menlo,DejaVu Sans Mono,monospace">Ctrl+K</text>
+<text x="76" y="151" fill="#B6A1C7" font-size="13" font-weight="normal" font-family="Consolas,Menlo,DejaVu Sans Mono,monospace">Find tools by problem, purpose, or command name</text>
+<rect x="52" y="190" width="262" height="382" rx="8" fill="#1D1230" stroke="#A855F7" stroke-opacity="0.5" stroke-width="1.5"/>
+<text x="74" y="224" fill="#A855F7" font-size="16" font-weight="bold" font-family="Consolas,Menlo,DejaVu Sans Mono,monospace">CATEGORIES</text>
+<rect x="69" y="242" width="228" height="37" rx="8" fill="#2A153C" stroke="#FF35A7" stroke-opacity="0.8" stroke-width="1.5"/><text x="81" y="269" fill="#F5E7FF" font-size="17" font-weight="bold" font-family="Consolas,Menlo,DejaVu Sans Mono,monospace">&gt; NETWORK</text>
+<text x="81" y="305" fill="#B6A1C7" font-size="17" font-weight="normal" font-family="Consolas,Menlo,DejaVu Sans Mono,monospace">  SYSTEM</text>
+<text x="81" y="341" fill="#B6A1C7" font-size="17" font-weight="normal" font-family="Consolas,Menlo,DejaVu Sans Mono,monospace">  SECURITY</text>
+<text x="81" y="377" fill="#B6A1C7" font-size="17" font-weight="normal" font-family="Consolas,Menlo,DejaVu Sans Mono,monospace">  DATABASE</text>
+<text x="81" y="413" fill="#B6A1C7" font-size="17" font-weight="normal" font-family="Consolas,Menlo,DejaVu Sans Mono,monospace">  LOGS</text>
+<text x="81" y="449" fill="#B6A1C7" font-size="17" font-weight="normal" font-family="Consolas,Menlo,DejaVu Sans Mono,monospace">  WORKFLOWS</text>
+<text x="81" y="485" fill="#B6A1C7" font-size="17" font-weight="normal" font-family="Consolas,Menlo,DejaVu Sans Mono,monospace">  KNOWLEDGE</text>
+<text x="81" y="521" fill="#B6A1C7" font-size="17" font-weight="normal" font-family="Consolas,Menlo,DejaVu Sans Mono,monospace">  FAVORITES</text>
+<rect x="330" y="190" width="473" height="382" rx="8" fill="#1D1230" stroke="#A855F7" stroke-opacity="0.5" stroke-width="1.5"/>
+<text x="353" y="224" fill="#A855F7" font-size="16" font-weight="bold" font-family="Consolas,Menlo,DejaVu Sans Mono,monospace">NETWORK TOOLS / 07</text>
+<rect x="346" y="240" width="439" height="40" rx="8" fill="#2A153C" stroke="#A855F7" stroke-opacity="0.9" stroke-width="1.5"/><text x="368" y="267" fill="#F5E7FF" font-size="18" font-weight="bold" font-family="Consolas,Menlo,DejaVu Sans Mono,monospace">&gt; TCP Port Check</text><text x="703" y="267" fill="#9CF4C5" font-size="14" font-weight="bold" font-family="Consolas,Menlo,DejaVu Sans Mono,monospace">READY</text>
+<text x="368" y="310" fill="#B6A1C7" font-size="18" font-weight="normal" font-family="Consolas,Menlo,DejaVu Sans Mono,monospace">  DNS Lookup</text>
+<text x="368" y="353" fill="#B6A1C7" font-size="18" font-weight="normal" font-family="Consolas,Menlo,DejaVu Sans Mono,monospace">  HTTP Health</text>
+<text x="368" y="396" fill="#B6A1C7" font-size="18" font-weight="normal" font-family="Consolas,Menlo,DejaVu Sans Mono,monospace">  TLS Inspection</text>
+<text x="368" y="439" fill="#B6A1C7" font-size="18" font-weight="normal" font-family="Consolas,Menlo,DejaVu Sans Mono,monospace">  Reverse DNS</text>
+<text x="368" y="482" fill="#B6A1C7" font-size="18" font-weight="normal" font-family="Consolas,Menlo,DejaVu Sans Mono,monospace">  Disk Usage</text>
+<text x="368" y="525" fill="#B6A1C7" font-size="18" font-weight="normal" font-family="Consolas,Menlo,DejaVu Sans Mono,monospace">  SHA-256 Hash</text>
+<rect x="820" y="190" width="568" height="382" rx="8" fill="#1D1230" stroke="#A855F7" stroke-opacity="0.5" stroke-width="1.5"/>
+<text x="843" y="224" fill="#A855F7" font-size="16" font-weight="bold" font-family="Consolas,Menlo,DejaVu Sans Mono,monospace">TOOL CONFIGURATION</text>
+<text x="844" y="268" fill="#F5E7FF" font-size="25" font-weight="bold" font-family="Consolas,Menlo,DejaVu Sans Mono,monospace">TCP PORT CHECK</text>
+<text x="844" y="297" fill="#B6A1C7" font-size="15" font-weight="normal" font-family="Consolas,Menlo,DejaVu Sans Mono,monospace">Native Rust | Read-only | No Nmap required</text>
+<text x="844" y="337" fill="#FF35A7" font-size="14" font-weight="bold" font-family="Consolas,Menlo,DejaVu Sans Mono,monospace">TARGET HOST</text>
+<rect x="842" y="349" width="523" height="47" rx="8" fill="#2A153C" stroke="#A855F7" stroke-opacity="0.75" stroke-width="1.5"/><text x="862" y="380" fill="#F5E7FF" font-size="20" font-weight="normal" font-family="Consolas,Menlo,DejaVu Sans Mono,monospace">192.168.1.10</text>
+<text x="844" y="430" fill="#FF35A7" font-size="14" font-weight="bold" font-family="Consolas,Menlo,DejaVu Sans Mono,monospace">PORT</text>
+<rect x="842" y="443" width="244" height="44" rx="8" fill="#2A153C" stroke="#A855F7" stroke-opacity="0.75" stroke-width="1.5"/><text x="862" y="471" fill="#F5E7FF" font-size="20" font-weight="normal" font-family="Consolas,Menlo,DejaVu Sans Mono,monospace">443</text>
+<text x="1140" y="472" fill="#B6A1C7" font-size="15" font-weight="normal" font-family="Consolas,Menlo,DejaVu Sans Mono,monospace">Timeout: 5s</text>
+<rect x="842" y="510" width="274" height="42" rx="8" fill="#A855F7" stroke="#A855F7" stroke-opacity="1" stroke-width="1.5"/><text x="873" y="539" fill="#100A1D" font-size="20" font-weight="bold" font-family="Consolas,Menlo,DejaVu Sans Mono,monospace">&gt; RUN CHECK</text>
+<text x="1140" y="539" fill="#B6A1C7" font-size="15" font-weight="normal" font-family="Consolas,Menlo,DejaVu Sans Mono,monospace">Enter to run</text>
+<rect x="52" y="592" width="1336" height="184" rx="8" fill="#1D1230" stroke="#A855F7" stroke-opacity="0.5" stroke-width="1.5"/>
+<text x="73" y="623" fill="#A855F7" font-size="16" font-weight="bold" font-family="Consolas,Menlo,DejaVu Sans Mono,monospace">RESULT / LAST RUN</text>
+<text x="74" y="660" fill="#9CF4C5" font-size="21" font-weight="bold" font-family="Consolas,Menlo,DejaVu Sans Mono,monospace">OK  TCP connection established</text>
+<text x="74" y="690" fill="#F5E7FF" font-size="18" font-weight="normal" font-family="Consolas,Menlo,DejaVu Sans Mono,monospace">Target: 192.168.1.10:443</text>
+<text x="74" y="721" fill="#B6A1C7" font-size="16" font-weight="normal" font-family="Consolas,Menlo,DejaVu Sans Mono,monospace">Finding: OPEN   Duration: 12 ms (illustrative only)</text>
+<text x="74" y="751" fill="#B6A1C7" font-size="16" font-weight="normal" font-family="Consolas,Menlo,DejaVu Sans Mono,monospace">No changes made to target system.</text>
+<text x="54" y="807" fill="#B6A1C7" font-size="15" font-weight="normal" font-family="Consolas,Menlo,DejaVu Sans Mono,monospace">Up/Down Navigate  |  Tab Focus  |  Enter Select  |  F1 Help  |  F2 Workflows  |  F9 Theme  |  Esc Back</text>
+<text x="1298" y="807" fill="#A855F7" font-size="13" font-weight="bold" font-family="Consolas,Menlo,DejaVu Sans Mono,monospace">NEO TOKYO</text>
+</svg>
