@@ -31,8 +31,12 @@ All commands above are *planned interfaces*, not currently working implementatio
 9. [Portability and security](docs/portability-security.md)
 10. [Verification and release criteria](docs/testing-release.md)
 11. [AI agent skills](docs/agent-skills.md)
-12. [Codex Cloud handoff](docs/CODEX_START_HERE.md)
-13. [Agent working agreement](AGENTS.md)
+12. [Design references + four editable TUI mockups](docs/design-references.md)
+13. [Codex Cloud handoff](docs/CODEX_START_HERE.md)
+14. [First Codex task: NYRA-001](docs/CODEX_TASK_001.md)
+15. [Agent working agreement](AGENTS.md)
+16. [Example configuration](examples/config.toml)
+17. [Example workflow definition](examples/web-unreachable.toml)
 
 ## Baseline
 
@@ -43,6 +47,12 @@ All commands above are *planned interfaces*, not currently working implementatio
 - Per-platform artifacts, not one binary for every OS.
 - Windows and Linux first; macOS/ARM64 after platform validation, Solaris via SSH; older Windows is not promised.
 - Separate roadmap stages from **implemented/tested** status. No feature is complete merely because it appears in a spec.
+
+## Theme previews
+
+[Cyber Cyan](assets/mockups/nyra-cyber-cyan.svg) · [Neo Tokyo](assets/mockups/nyra-neo-tokyo.svg) · [Acid Grid](assets/mockups/nyra-acid-grid.svg) · [Crimson Noir](assets/mockups/nyra-crimson-noir.svg)
+
+These are editable SVG **concept mockups**, not real screenshots of functioning software. Exact original PNG mockups from earlier chat are not yet committed.
 
 ## Initial instruction for Codex Cloud
 
