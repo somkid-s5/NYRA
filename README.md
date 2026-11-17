@@ -50,11 +50,18 @@ All commands above are *planned interfaces*, not currently working implementatio
 - Windows and Linux first; macOS/ARM64 after platform validation, Solaris via SSH; older Windows is not promised.
 - Separate roadmap stages from **implemented/tested** status. No feature is complete merely because it appears in a spec.
 
-## Theme previews
+## Design previews — all four configurable themes
 
-[Cyber Cyan](assets/mockups/nyra-cyber-cyan.svg) · [Neo Tokyo](assets/mockups/nyra-neo-tokyo.svg) · [Acid Grid](assets/mockups/nyra-acid-grid.svg) · [Crimson Noir](assets/mockups/nyra-crimson-noir.svg)
+![NYRA themes comparison](assets/mockups/nyra-four-themes.png)
 
-These are editable SVG **concept mockups**, not real screenshots of functioning software. Exact original PNG mockups from earlier chat are not yet committed.
+| Theme | Preview (PNG) | Editable concept (SVG) |
+|---|---|---|
+| Cyber Cyan | [View PNG](assets/mockups/nyra-cyber-cyan.png) | [Edit SVG](assets/mockups/nyra-cyber-cyan.svg) |
+| Neo Tokyo | [View PNG](assets/mockups/nyra-neo-tokyo.png) | [Edit SVG](assets/mockups/nyra-neo-tokyo.svg) |
+| Acid Grid | [View PNG](assets/mockups/nyra-acid-grid.png) | [Edit SVG](assets/mockups/nyra-acid-grid.svg) |
+| Crimson Noir | [View PNG](assets/mockups/nyra-crimson-noir.png) | [Edit SVG](assets/mockups/nyra-crimson-noir.svg) |
+
+These are **SVG-derived PNG concept previews** of a planned terminal UI, not captures of running code or the original chat-generated raster designs. See [image provenance](assets/mockups/ORIGINALS_NOTICE.md).
 
 ## Initial instruction for Codex Cloud
 
