@@ -1,0 +1,28 @@
+# Illustrative Workflow — not parseable by NYRA until Workflow Engine implemented.
+id = "web-unreachable"
+version = 1
+description = "DNS -> TCP -> TLS -> HTTP check"
+risk = "read-only"
+
+[inputs]
+target = "url"
+timeout_seconds = 5
+
+[[steps]]
+id = "dns"
+tool = "network.dns"
+
+[[steps]]
+id = "tcp"
+tool = "network.tcp"
+run_if = "dns.completed"
+
+[[steps]]
+id = "tls"
+tool = "security.tls"
+run_if = "tcp.finding == open and scheme == https"
+
+[[steps]]
+id = "http"
+tool = "web.http"
+run_if = "tcp.finding == open"

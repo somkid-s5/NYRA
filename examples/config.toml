@@ -1,0 +1,41 @@
+# NYRA example settings — conceptual schema; implementation not present yet.
+[general]
+language = "th"
+startup_mode = "interactive"
+portable = true
+check_updates = false
+
+[appearance]
+theme = "neo-tokyo"
+animations = true
+animation_speed = "normal"
+reduced_motion = false
+compact_mode = false
+
+[sound]
+enabled = true
+volume = 40
+startup = true
+navigation = false
+success = true
+warning = true
+error = true
+workflow_complete = true
+
+[search]
+fuzzy = true
+include_aliases = true
+remember_recent = true
+
+[execution]
+default_timeout_seconds = 5
+confirm_risky_commands = true
+max_parallel_tasks = 5
+
+[history]
+enabled = true
+max_entries = 500
+
+[reports]
+format = "html"
+directory = "./reports"
