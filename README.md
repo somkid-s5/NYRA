@@ -20,6 +20,8 @@ All commands above are *planned interfaces*, not currently working implementatio
 
 ## Read this first
 
+**อ่านภาษาไทย:** [สรุปข้อตกลง NYRA ทั้งโปรเจกต์](docs/THAI_SUMMARY.md)
+
 1. [Product requirements](docs/product-requirements.md)
 2. [Decision log](docs/decisions.md) — what has already been agreed
 3. [Master roadmap and backlog](docs/roadmap.md)
