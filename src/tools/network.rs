@@ -36,7 +36,7 @@ pub(crate) async fn dns(
     let deadline = tokio::time::Instant::now() + Duration::from_secs(timeout_seconds);
     let mut builder = TokioResolver::builder_tokio().map_err(|_| RunError::ResolverUnavailable)?;
     builder.options_mut().timeout = Duration::from_secs(timeout_seconds);
-    let resolver = builder.build();
+    let resolver = builder.build().map_err(|_| RunError::ResolverUnavailable)?;
     let mut records = Vec::with_capacity(record_types.len());
     for record_type in record_types.into_iter().take(MAX_DNS_TYPES) {
         if tokio::time::Instant::now() >= deadline {
@@ -49,7 +49,7 @@ pub(crate) async fn dns(
                 .answers()
                 .iter()
                 .take(MAX_DNS_ANSWERS)
-                .map(|answer| answer.data().to_string())
+                .map(|answer| answer.data.to_string())
                 .collect(),
             Ok(Err(error)) if error.is_no_records_found() => Vec::new(),
             Ok(Err(_)) => return Err(RunError::ResolutionFailed),
@@ -70,7 +70,7 @@ pub(crate) async fn reverse_dns(
 ) -> Result<(bool, DnsData), RunError> {
     let mut builder = TokioResolver::builder_tokio().map_err(|_| RunError::ResolverUnavailable)?;
     builder.options_mut().timeout = Duration::from_secs(timeout_seconds);
-    let resolver = builder.build();
+    let resolver = builder.build().map_err(|_| RunError::ResolverUnavailable)?;
     let deadline = tokio::time::Instant::now() + Duration::from_secs(timeout_seconds);
     let lookup = timeout_at(deadline, resolver.reverse_lookup(Name::from(address)))
         .await
@@ -80,7 +80,7 @@ pub(crate) async fn reverse_dns(
             .answers()
             .iter()
             .take(MAX_DNS_ANSWERS)
-            .map(|answer| answer.data().to_string())
+            .map(|answer| answer.data.to_string())
             .collect::<Vec<_>>(),
         Err(error) if error.is_no_records_found() => Vec::new(),
         Err(_) => return Err(RunError::ResolutionFailed),

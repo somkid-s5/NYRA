@@ -15,6 +15,7 @@ use ratatui::{
     widgets::{Block, Borders, List, ListItem, ListState, Paragraph, Wrap},
 };
 use std::{
+    cell::Cell,
     io,
     sync::mpsc,
     thread::{self, JoinHandle},
@@ -22,6 +23,7 @@ use std::{
 };
 use tokio::{runtime::Builder, sync::oneshot};
 use unicode_segmentation::UnicodeSegmentation;
+use unicode_width::UnicodeWidthStr;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum Screen {
@@ -89,7 +91,7 @@ const MAX_SEARCH_CHARS: usize = 128;
 enum Completion {
     #[default]
     None,
-    Result(RunResult),
+    Result(Box<RunResult>),
     Error(String),
 }
 
@@ -115,6 +117,8 @@ struct App {
     input_values: Vec<String>,
     active_field: usize,
     theme_index: usize,
+    detail_scroll: u16,
+    detail_scroll_limit: Cell<u16>,
     result_scroll: u16,
     status: String,
     completion: Completion,
@@ -131,6 +135,8 @@ impl App {
             input_values: Vec::new(),
             active_field: 0,
             theme_index: 0,
+            detail_scroll: 0,
+            detail_scroll_limit: Cell::new(0),
             result_scroll: 0,
             status: String::new(),
             completion: Completion::None,
@@ -161,6 +167,11 @@ impl App {
 
     fn current_category(&self) -> Option<ToolCategory> {
         CATEGORIES[self.category_index]
+    }
+
+    fn set_tool_selection(&mut self, selection: usize) {
+        self.selection = selection;
+        self.detail_scroll = 0;
     }
 
     fn handle_key(&mut self, key: KeyEvent) -> Action {
@@ -217,7 +228,7 @@ impl App {
         match key.code {
             KeyCode::Tab => {
                 self.category_index = (self.category_index + 1) % CATEGORIES.len();
-                self.selection = 0;
+                self.set_tool_selection(0);
                 let category = self
                     .current_category()
                     .map_or_else(|| "All".to_owned(), |value| value.to_string());
@@ -227,7 +238,7 @@ impl App {
             KeyCode::BackTab => {
                 self.category_index =
                     (self.category_index + CATEGORIES.len() - 1) % CATEGORIES.len();
-                self.selection = 0;
+                self.set_tool_selection(0);
                 let category = self
                     .current_category()
                     .map_or_else(|| "All".to_owned(), |value| value.to_string());
@@ -236,24 +247,42 @@ impl App {
             }
             KeyCode::Esc if !self.query.is_empty() => {
                 self.query.clear();
-                self.selection = 0;
+                self.set_tool_selection(0);
                 Action::None
             }
             KeyCode::Esc => Action::Quit,
             KeyCode::Up => {
-                self.selection = self.selection.saturating_sub(1);
+                self.set_tool_selection(self.selection.saturating_sub(1));
                 Action::None
             }
             KeyCode::Down => {
                 let len = self.visible_tools().len();
-                if len > 0 {
-                    self.selection = (self.selection + 1).min(len - 1);
-                }
+                let selection = if len > 0 {
+                    (self.selection + 1).min(len - 1)
+                } else {
+                    0
+                };
+                self.set_tool_selection(selection);
+                Action::None
+            }
+            KeyCode::PageUp => {
+                self.detail_scroll = self.detail_scroll.saturating_sub(4);
+                Action::None
+            }
+            KeyCode::PageDown => {
+                self.detail_scroll = self
+                    .detail_scroll
+                    .saturating_add(4)
+                    .min(self.detail_scroll_limit.get());
+                Action::None
+            }
+            KeyCode::Home => {
+                self.detail_scroll = 0;
                 Action::None
             }
             KeyCode::Backspace => {
                 pop_last_grapheme(&mut self.query);
-                self.selection = 0;
+                self.set_tool_selection(0);
                 Action::None
             }
             KeyCode::Enter => {
@@ -280,7 +309,7 @@ impl App {
                     && self.query.chars().count() < MAX_SEARCH_CHARS =>
             {
                 self.query.push(character);
-                self.selection = 0;
+                self.set_tool_selection(0);
                 Action::None
             }
             KeyCode::F(1) => {
@@ -456,6 +485,39 @@ fn platform_list(platforms: &[crate::OperatingSystem]) -> String {
         .join(", ")
 }
 
+fn wrapped_line_count(text: &str, width: u16) -> usize {
+    let width = usize::from(width.max(1));
+    text.lines()
+        .map(|line| {
+            let mut visual_lines = 1;
+            let mut current_width = 0;
+            for word in line.split_whitespace() {
+                let word_width = UnicodeWidthStr::width(word);
+                if current_width > 0 {
+                    if current_width + 1 + word_width <= width {
+                        current_width += 1;
+                    } else {
+                        visual_lines += 1;
+                        current_width = 0;
+                    }
+                }
+                let mut remaining = word_width;
+                while remaining > 0 {
+                    let available = width - current_width;
+                    let consumed = remaining.min(available);
+                    current_width += consumed;
+                    remaining -= consumed;
+                    if remaining > 0 {
+                        visual_lines += 1;
+                        current_width = 0;
+                    }
+                }
+            }
+            visual_lines
+        })
+        .sum()
+}
+
 fn render(frame: &mut Frame<'_>, app: &App) {
     frame.render_widget(
         Block::default().style(Style::default().bg(app.theme().background)),
@@ -530,8 +592,8 @@ fn render_tools(frame: &mut Frame<'_>, app: &App) {
                 .constraints([
                     Constraint::Length(3),
                     Constraint::Length(3),
-                    Constraint::Min(6),
-                    Constraint::Length(6),
+                    Constraint::Min(4),
+                    Constraint::Length(9),
                     Constraint::Length(4),
                 ])
                 .split(frame.area());
@@ -602,15 +664,22 @@ fn render_tools(frame: &mut Frame<'_>, app: &App) {
             )
         },
     );
+    let inner_width = detail_area.width.saturating_sub(2);
+    let content_lines = wrapped_line_count(&detail, inner_width);
+    let visible_lines = usize::from(detail_area.height.saturating_sub(2));
+    let max_scroll = content_lines
+        .saturating_sub(visible_lines)
+        .min(usize::from(u16::MAX)) as u16;
+    app.detail_scroll_limit.set(max_scroll);
+    let detail_scroll = app.detail_scroll.min(max_scroll);
+    let detail_paragraph = Paragraph::new(detail).wrap(Wrap { trim: true });
     frame.render_widget(
-        Paragraph::new(detail)
-            .block(
-                Block::default()
-                    .borders(Borders::ALL)
-                    .title("Selected tool")
-                    .border_style(Style::default().fg(theme.secondary)),
-            )
-            .wrap(Wrap { trim: true }),
+        detail_paragraph.scroll((detail_scroll, 0)).block(
+            Block::default()
+                .borders(Borders::ALL)
+                .title("Selected tool · PgUp/PgDn scroll · Home top")
+                .border_style(Style::default().fg(theme.secondary)),
+        ),
         detail_area,
     );
     render_footer(
@@ -673,11 +742,10 @@ fn render_form(frame: &mut Frame<'_>, app: &App) {
         ));
         lines.push(tool.description.to_owned());
         lines.push(format!(
-            "Backend: {} · Readiness: {} · Platforms: {}",
-            tool.backend,
-            tool.platform_status,
-            platform_list(tool.platforms)
+            "Backend: {} · Readiness: {}",
+            tool.backend, tool.platform_status
         ));
+        lines.push(format!("Platforms: {}", platform_list(tool.platforms)));
         lines.push(format!(
             "Smoke tested on: {}",
             platform_list(tool.smoke_tested_platforms)
@@ -923,7 +991,7 @@ pub fn run() -> io::Result<()> {
                                         };
                                         let result = runtime.block_on(execute(input, cancel));
                                         runtime.shutdown_background();
-                                        Completion::Result(result)
+                                        Completion::Result(Box::new(result))
                                     }
                                     Err(error) => Completion::Error(error.to_string()),
                                 };
@@ -992,6 +1060,101 @@ mod tests {
         assert!(text.contains("sound off"));
         assert!(text.contains("idle"));
         assert!(text.contains("Ctrl+C quit"));
+    }
+
+    #[test]
+    fn minimal_tool_detail_can_scroll_to_its_hidden_examples() {
+        let backend = TestBackend::new(80, 24);
+        let mut terminal = Terminal::new(backend).unwrap();
+        let mut app = App::new();
+
+        terminal.draw(|frame| render(frame, &app)).unwrap();
+        let initial = rendered_text(&terminal);
+        assert!(initial.contains("PgUp/PgDn scroll"));
+        assert!(!initial.contains("Examples:"));
+
+        app.handle_key(KeyEvent::new(KeyCode::PageDown, KeyModifiers::NONE));
+        assert_eq!(app.detail_scroll, app.detail_scroll_limit.get());
+        terminal.draw(|frame| render(frame, &app)).unwrap();
+        assert!(rendered_text(&terminal).contains("Examples:"));
+
+        app.handle_key(KeyEvent::new(KeyCode::PageDown, KeyModifiers::NONE));
+        assert_eq!(app.detail_scroll, app.detail_scroll_limit.get());
+        app.handle_key(KeyEvent::new(KeyCode::PageUp, KeyModifiers::NONE));
+        assert_eq!(app.detail_scroll, 0);
+        app.handle_key(KeyEvent::new(KeyCode::PageDown, KeyModifiers::NONE));
+        app.handle_key(KeyEvent::new(KeyCode::Home, KeyModifiers::NONE));
+        assert_eq!(app.detail_scroll, 0);
+    }
+
+    #[test]
+    fn detail_wrapping_counts_combining_and_wide_characters_by_cell_width() {
+        assert_eq!(wrapped_line_count("e\u{301}", 1), 1);
+        assert_eq!(wrapped_line_count("界界", 2), 2);
+        assert_eq!(wrapped_line_count("┌─┐", 3), 1);
+    }
+
+    #[test]
+    fn scrolled_tool_detail_returns_to_the_top_when_viewport_grows() {
+        let backend = TestBackend::new(80, 24);
+        let mut terminal = Terminal::new(backend).unwrap();
+        let mut app = App::new();
+
+        terminal.draw(|frame| render(frame, &app)).unwrap();
+        app.handle_key(KeyEvent::new(KeyCode::PageDown, KeyModifiers::NONE));
+        assert!(app.detail_scroll > 0);
+
+        terminal.backend_mut().resize(150, 36);
+        terminal.resize(Rect::new(0, 0, 150, 36)).unwrap();
+        terminal.draw(|frame| render(frame, &app)).unwrap();
+        let text = rendered_text(&terminal);
+        assert!(text.contains("network.tcp"), "{text}");
+        assert!(text.contains("Examples:"));
+    }
+
+    #[test]
+    fn tool_explorer_preserves_search_and_context_across_layout_sizes() {
+        let backend = TestBackend::new(150, 36);
+        let mut terminal = Terminal::new(backend).unwrap();
+        let mut app = App::new();
+        for character in "dns lookup".chars() {
+            app.handle_key(KeyEvent::new(KeyCode::Char(character), KeyModifiers::NONE));
+        }
+
+        for (width, height) in [(150, 36), (120, 36), (80, 24)] {
+            terminal.backend_mut().resize(width, height);
+            terminal.resize(Rect::new(0, 0, width, height)).unwrap();
+            terminal.draw(|frame| render(frame, &app)).unwrap();
+            let text = rendered_text(&terminal);
+            assert!(text.contains("Search tools: dns lookup"), "{text}");
+            assert!(text.contains("DNS Lookup"), "{text}");
+            assert!(text.contains("network.dns"), "{text}");
+            assert!(text.contains("Ctrl+C quit"), "{text}");
+        }
+    }
+
+    #[test]
+    fn long_execution_error_is_reachable_from_the_80_by_24_result_view() {
+        let backend = TestBackend::new(80, 24);
+        let mut terminal = Terminal::new(backend).unwrap();
+        let mut app = App::new();
+        let details = (0..24)
+            .map(|index| format!("Diagnostic detail {index}"))
+            .collect::<Vec<_>>()
+            .join("\n");
+        app.screen = Screen::Result;
+        app.completion = Completion::Error(format!("{details}\nCRITICAL FINAL DETAIL"));
+
+        terminal.draw(|frame| render(frame, &app)).unwrap();
+        let initial = rendered_text(&terminal);
+        assert!(initial.contains("Execution error"));
+        assert!(initial.contains("PgUp/PgDn page"));
+        assert!(!initial.contains("CRITICAL FINAL DETAIL"));
+
+        app.handle_key(KeyEvent::new(KeyCode::PageDown, KeyModifiers::NONE));
+        app.handle_key(KeyEvent::new(KeyCode::PageDown, KeyModifiers::NONE));
+        terminal.draw(|frame| render(frame, &app)).unwrap();
+        assert!(rendered_text(&terminal).contains("CRITICAL FINAL DETAIL"));
     }
 
     #[test]
@@ -1152,7 +1315,7 @@ mod tests {
         let backend = TestBackend::new(100, 32);
         let mut terminal = Terminal::new(backend).unwrap();
         let mut app = App::new();
-        app.show_completion(Completion::Result(RunResult {
+        app.show_completion(Completion::Result(Box::new(RunResult {
             schema_version: 1,
             tool_id: "network.tcp",
             target: "127.0.0.1:443".into(),
@@ -1161,7 +1324,7 @@ mod tests {
             data: None,
             duration_ms: 3,
             error: None,
-        }));
+        })));
         terminal.draw(|frame| render(frame, &app)).unwrap();
         let text = rendered_text(&terminal);
         assert!(text.contains("Execution: completed"));

@@ -1409,6 +1409,7 @@ dependencies = [
  "tokio",
  "tokio-rustls",
  "unicode-segmentation",
+ "unicode-width",
  "x509-parser",
 ]
 
