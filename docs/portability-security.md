@@ -3,7 +3,7 @@
 ## Portable usage contracts
 **GitHub Releases:** provide separately compiled archives for supported OS/CPU targets. User extracts archive and runs executable; no Rust or Cargo on target. Windows from directory: \`.\nyra.exe\`; Linux from directory: \`./nyra\` with executable permissions.
 
-**USB:** executable + config + themes + profiles + recipes + data/reports can live on removable drive; moving USB preserves settings where writable. Use a \`portable.flag\` marker (proposed) to select workspace paths and avoid using host profile by default. Handle read-only media without crashing.
+**USB (partial):** a \`portable.flag\` marker in the executable directory or its parent selects \`config/config.toml\` and \`themes/custom.toml\` under that root. This path-selection behavior is implemented. Removable-media packaging, moving-drive behavior, reports/profiles/recipes placement, read-only-media handling, and clean-host USB smoke tests remain unverified.
 
 **Git clone:** for development; does not imply target computer has compiler. Do not require admin rights for ordinary diagnostics.
 
@@ -51,6 +51,8 @@ Native Rust: minimal deps and privilege where feasible. OS Adapter: only where O
 - Authenticate remote connections; check SSH host key; validate remote TLS certificate/WinRM auth.
 - Never write plaintext passwords/tokens, SSH keys or database secrets to config/reports/history. Prefer OS store/SSH agent/secure prompt.
 - Redact logs, command output and report targets when sensitive; default report saving to explicit action.
+- Current report-file behavior: Web Diagnostics CLI `--report-json`, `--report-html`, or `--report-csv <PATH>` writes one separate sanitized file only when requested. All formats redact the full target and observer, omit raw result data, cap output at 64 KiB, and refuse overwrite. Existing `--output json` remains a separate raw result on stdout; do not treat it as the sanitized report.
+- Solaris knowledge cards document commands only; they do not imply native NYRA binaries or Solaris diagnostic execution support. Netcat may require the optional `network/netcat` package; its card targets one authorized endpoint and does not claim a bounded connect timeout.
 - Verify downloaded releases by checksum/signature where supported; document supply chain.
 - Do not bypass endpoint execution controls, managed workstation policies or enterprise security products.
 

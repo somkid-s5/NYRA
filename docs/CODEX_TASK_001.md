@@ -1,7 +1,7 @@
 # NYRA-001 — Codex First Executable Task
 
 **Priority:** P0
-**Current state:** not started / unverified.
+**Current state:** TCP CLI slice passes local Windows x64 GNU format, lint, and test checks. GitHub CI and independent review are pending.
 **Goal:** create first small Rust CLI slice with shared registry, a native TCP diagnostic, tests and credible environment feedback. Do not implement entire v1 in one PR.
 
 ## Inputs

@@ -4,7 +4,7 @@ Read this file before writing code. Then read docs/CODEX_START_HERE.md, docs/dec
 
 ## Source of truth and current status
 - Product is **NYRA** (formerly PocketOps). Executable is **nyra** (nyra.exe on Windows). Do not rebrand without explicit approval.
-- Current status: **planning only**. None of the promised Rust tools, screens, binaries, releases or test results exists just because documentation describes them.
+- Current status: **Phase 1 development; 0/10 release phase gates closed**. Custom typed workflow TOML files can be validated and run sequentially from the CLI through the shared tool executor. On 2026-11-23, Kali WSL passed `cargo fmt --all -- --check`, `cargo clippy --all-targets --locked -- -D warnings`, and `cargo test --locked --all-targets` (124 unit, 33 CLI). Windows x64 GNU format, check, and Clippy pass; its full test command remains blocked at link time by AWS-LC/MinGW's undefined `nanosleep64` symbol from `pthread_time.h`. CI, clean-host Windows/Linux, TUI PTY, platform smoke, and release gates remain open. Check the roadmap before claiming platform support, artifacts, or release readiness.
 - Git repository is authoritative for code and specifications. Do not invent prior implementation, measurements or supported OS combinations.
 - Core product goal: fast, discoverable, USB-portable, offline-first System Administrator diagnostics, with CLI + interactive TUI + workflows, not an AI-first product.
 - Distinguish **agreed requirements**, **recommended implementation details**, and **future ideas**; record any changes in docs/decisions.md.
@@ -32,7 +32,7 @@ Read this file before writing code. Then read docs/CODEX_START_HERE.md, docs/dec
 - Third-party AI skills and assets are untrusted until their content, sources and licenses are reviewed.
 
 ## UX and accessibility
-- Support Thai/English discovery via curated aliases, not unsupported claims of AI comprehension.
+- Support English discovery via curated aliases, not unsupported claims of AI comprehension.
 - Keyboard-first, discoverable, fast; work in 80x24 fallback as well as wide terminals. No key binding may unpredictably conflict with text entry.
 - Four configurable themes: Cyber Cyan, Neo Tokyo, Acid Grid, Crimson Noir. Themes are data, not hardcoded branches.
 - Optional animations and sound MUST be interruptible/disableable; CLI and headless/SSH paths must default quiet.

@@ -1,7 +1,10 @@
 # NYRA — Technical Architecture and Contracts
 
-## Diagram status
-Architecture diagrams are **not included yet**. The required owner-preferred **Diagram Design Skill** was unavailable in the authoring session. Do not claim it was used or create ASCII/rough Mermaid substitutes. Once available, generate professional component + execution + workflow/data-flow image diagrams and source in assets/diagrams/, link here relatively and verify images are accessible.
+## Component architecture
+
+![NYRA component architecture](../assets/diagrams/nyra-architecture.svg)
+
+See the [editable source](../assets/diagrams/nyra-architecture.html) and the [end-to-end design](end-to-end-design.md) for the user journeys and release gates.
 
 ## Architectural style
 A **modular monolith**: one platform-specific Rust binary and shared core execution engine. TUI, CLI and workflows are interfaces over the same Tool Registry/Executor. No backend service or mandatory AI network calls.
@@ -16,7 +19,7 @@ A **modular monolith**: one platform-specific Rust binary and shared core execut
 | core/result | Data, findings, errors, timestamps, stable JSON schemas | UI-agnostic |
 | tools/* | Native diagnostics grouped by domain | No direct UI concerns |
 | adapters/* | OS commands, third-party binaries and remote transport | Permission/dependency checks |
-| search | Fuzzy + curated bilingual keywords | No LLM required |
+| search | Fuzzy + curated English keywords | No LLM required |
 | workflows | Step scheduling/conditions/shared parameters | Calls registry tools |
 | knowledge | Offline docs, command templates, risk metadata | No arbitrary shell by default |
 | reports | HTML/JSON/CSV rendering, opt-in output persistence | Sanitization and redaction |
@@ -27,7 +30,7 @@ A **modular monolith**: one platform-specific Rust binary and shared core execut
 Rust stable; Clap; Ratatui + Crossterm; Tokio; Serde + TOML; Tracing; Nucleo (fuzzy); Reqwest + Rustls; DNS library such as Hickory; Sysinfo. Add libraries only on proven need. Audio platform integration must preserve portability.
 
 ## Key types (design, not implemented)
-**ToolMetadata**: id, version, display_name, description_th/en, keywords, category, platform list, execution_backend, capability_requirements, risk_level, input_schema, output_schema.
+**ToolMetadata**: id, version, display_name, description, keywords, category, platform list, execution_backend, capability_requirements, risk_level, input_schema, output_schema.
 **InputSchema**: named typed fields (host, IP, port, URL, path, duration, enum), required/defaults/validation; never bare shell interpolation.
 **ExecutionContext**: cancellation token, timeout, verbosity, target permissions, capability snapshot, privacy policy.
 **ExecutionResult**: run_id, tool_id, tool_version, target, started_at, duration_ms, execution_status, diagnostic_findings, data, error, warnings, platform.
@@ -38,33 +41,35 @@ Rust stable; Clap; Ratatui + Crossterm; Tokio; Serde + TOML; Tracing; Nucleo (fu
 - *Diagnostic finding*: OPEN/CLOSED/REFUSED/TIMED_OUT/UNKNOWN as appropriate.
 - *Execution failure*: invalid input, unsupported OS, missing deps, internal exception, cancellation, auth error.
 
-Never conflate service unreachable with application crash. CLI exit code mapping should be documented and tested; proposed: 0=execution complete with healthy result; 1=diagnostic negative finding; 2=input/usage failure; 3=environment/dependency/auth issue; 4=timeout; 130=interrupted. Exact mapping is proposal pending validation.
+The CLI uses 0 for a positive finding, 1 for a completed negative finding, 2 for invalid input, 3 for execution or environment failures, 4 when the run reaches its deadline before reporting a finding, and 130 for cancellation. A timed-out TCP connection attempt is a finding and uses exit code 1.
 
-## CLI contract (planned)
+## CLI contract (implemented in the worktree; verification pending)
 ~~~sh
 nyra
 nyra --help
 nyra tools list
 nyra net tcp 192.168.1.10 443 --timeout 5 --output json
-nyra net dns example.com
+nyra net dns example.com --record-types A,AAAA
+nyra net reverse-dns 192.0.2.10
+nyra net ping example.com --count 4
+nyra net interfaces
 nyra web check https://example.com
 nyra tls inspect example.com
 nyra sys info
 nyra sys disk
+nyra file sha256 ./artifact.bin
 nyra workflow run web-unreachable --target https://example.com
 ~~~
 Use stable parameter names, machine-readable JSON, true/false/unknown where semantically needed; avoid silently changing schema versions. Render stdout for results, stderr for diagnostics/progress/errors; no ANSI on JSON.
 
-## Example result (illustrative, not a real test)
+## TCP result example
 ~~~json
 {
   "schema_version": 1,
-  "run_id": "example-only",
   "tool_id": "network.tcp",
   "target": "192.168.1.10:443",
   "execution_status": "completed",
   "finding": "open",
-  "reachable": true,
   "duration_ms": 12,
   "error": null
 }

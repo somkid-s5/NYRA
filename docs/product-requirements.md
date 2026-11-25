@@ -7,7 +7,7 @@ Primary user: IT/System Administrator, comfortable with Windows/Linux and termin
 
 ## Product goals
 G1. Start diagnostics from a single portable executable on supported hosts.
-G2. Find tools by describing the goal in Thai or English, even without knowing tool names.
+G2. Find tools by describing the goal in English, even without knowing tool names.
 G3. Interactive TUI helps users configure/run/understand tools; direct CLI remains automation-friendly.
 G4. Combine checks in safe multi-step diagnostic workflows and export actionable reports.
 G5. Be offline-first, extensible, themeable, accessible and safe for production read-only checks.
@@ -23,14 +23,14 @@ G6. Deliver reliable binaries, documented limitations, and reproducible builds/t
 | FR-005 | P0 | At least 12 basic diagnostics spanning network/system/security with tests |
 | FR-006 | P0 | Native TCP/DNS/HTTP/TLS functionality does not require Nmap |
 | FR-007 | P0 | CLI text and JSON output, stable schema, stdout/stderr and documented exit codes |
-| FR-008 | P0 | Search by tool name, curated Thai/English aliases and typo-tolerant matching |
+| FR-008 | P0 | Search by tool name, curated English aliases and typo-tolerant matching |
 | FR-009 | P0 | Windows and Linux release targets tested on clean environments without Rust installed |
 | FR-010 | P1 | Four builtin cyberpunk themes, custom TOML palette, live switching and persistence |
-| FR-011 | P1 | Optional animation, sound, volume/event controls; quiet/headless compatibility |
-| FR-012 | P1 | Favorites and recent tools, with privacy controls to disable/redact history |
+| FR-011 | P1 | Partial: the Running screen has a bounded, indeterminate activity marker; F9 controls and persists animation, reduced-motion, and slow/normal/fast speed settings, with static SSH defaults and a skip-on-input startup spinner. Selection effects and optional sound, volume, and event controls remain open; CLI stays quiet. |
+| FR-012 | P1 | Favorites and recent tools with privacy controls. In Saved Tools, Ctrl+R disables recent tracking, clears stored recent tool IDs and persists `[discovery].record_recent = false`; enabling it again starts with an empty list. Store tool IDs only, never targets or input values. |
 | FR-013 | P1 | Offline command knowledge cards: syntax, description, OS, examples, risk and copy |
-| FR-014 | P1 | Workflow templates with shared input, sequential steps, conditionals, timeout/cancel |
-| FR-015 | P1 | Structured HTML/JSON/CSV reports with explicit save/export |
+| FR-014 | P1 | Partial: typed custom TOML workflows can be validated and run sequentially through the shared executor, with typed inputs/bindings, bounded prior-step conditions, timeout and cancellation. TUI workflow builder, parallel execution, and additional templates remain open. |
+| FR-015 | P1 | Direct diagnostics, Web Diagnostics, and custom workflow runs can export sanitized JSON, HTML, or CSV to explicit paths in the CLI. The TUI exports the displayed diagnostic result. Running and exporting custom workflow files in the TUI remain open. |
 | FR-016 | P1 | Portable workspace mode keeps config/profile/recipes/history alongside app if writable |
 | FR-017 | P1 | Search/help/settings/favorites/workflows and keybindings consistently navigable |
 | FR-018 | P2 | Agentless SSH remote checks for authorized Linux/Solaris systems |
@@ -63,7 +63,7 @@ CLI/TUI/workflows call one tool executor; command spellings are planned contract
 - Search latency: **target** under 100ms for built-in catalog, not yet measured.
 - No UI blocking while async tasks run, with cancel and timeout.
 - Bounded memory use for large logs; stream, never read unbounded files into RAM.
-- Screen sizes: wide 3-panel, compact 2-panel, minimal/80x24 fallback. Thai rendering verified.
+- Screen sizes: wide 3-panel, compact 2-panel, minimal/80x24 fallback.
 - Least privilege, no shell injection, consent for non-read-only operations, authenticated remote connections.
 - Actionable errors and explicit dependency/capability reporting.
 - Document cross-platform differences; no unverified universal binary claims.

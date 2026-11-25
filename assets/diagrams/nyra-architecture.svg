@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1120 400" role="img" aria-labelledby="title desc">
+<title id="title">NYRA diagnostic architecture</title>
+<desc id="desc">CLI, terminal UI, and workflows call a shared registry and executor. The executor runs platform-aware tools and produces a structured result. Explicit exports pass through redaction.</desc>
+<defs>
+<marker id="arrow" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0 0L7 3.5L0 7Z" fill="#526575"/></marker>
+<style>
+.heading{font:40px 'Instrument Serif',Georgia,serif;fill:#172b39}.name{font:600 18px Geist,system-ui,sans-serif;fill:#172b39}.small{font:14px Geist,system-ui,sans-serif;fill:#405666}.label{font:600 12px 'Geist Mono',monospace;letter-spacing:1px;fill:#405666}.box{fill:#fff;stroke:#9eafbb}.flow{fill:none;stroke:#526575;stroke-width:1.5;marker-end:url(#arrow)}
+</style>
+</defs>
+<rect width="1120" height="400" fill="#f4f9fb"/>
+<text x="40" y="45" class="label">NYRA / SYSTEM DESIGN</text>
+<text x="40" y="91" class="heading">One execution path for every diagnostic</text>
+<path d="M40 115H1080" stroke="#c3d1db"/>
+<text x="40" y="148" class="label">ENTRY POINTS</text>
+<text x="350" y="148" class="label">SHARED CORE</text>
+<text x="690" y="148" class="label">TOOLS AND OUTPUT</text>
+<path class="flow" d="M236 186H268Q276 186 276 194V224Q276 232 284 232H350"/>
+<path class="flow" d="M236 248H350"/>
+<path class="flow" d="M236 310H292Q300 310 300 302V272Q300 264 308 264H350"/>
+<path class="flow" d="M578 230H615Q623 230 623 222V194Q623 186 631 186H690"/>
+<path class="flow" d="M578 265H641Q649 265 649 273V292Q649 300 657 300H690"/>
+<path class="flow" d="M883 300H928"/>
+<rect x="40" y="163" width="196" height="46" rx="7" class="box"/>
+<rect x="40" y="225" width="196" height="46" rx="7" class="box"/>
+<rect x="40" y="287" width="196" height="46" rx="7" class="box"/>
+<rect x="350" y="194" width="228" height="109" rx="8" fill="#daf2f5" stroke="#007383" stroke-width="1.5"/>
+<rect x="690" y="163" width="193" height="82" rx="7" class="box"/>
+<rect x="690" y="267" width="193" height="66" rx="7" class="box"/>
+<rect x="928" y="267" width="152" height="66" rx="7" class="box"/>
+<text x="56" y="192" class="name">CLI</text>
+<text x="56" y="254" class="name">Terminal UI</text>
+<text x="56" y="316" class="name">Workflow runner</text>
+<text x="367" y="228" class="name">Registry and executor</text>
+<text x="367" y="252" class="small">Typed inputs and capabilities</text>
+<text x="367" y="275" class="small">Deadlines and cancellation</text>
+<text x="706" y="188" class="name">Diagnostic tools</text>
+<text x="706" y="211" class="small">Native checks and</text>
+<text x="706" y="229" class="small">platform adapters</text>
+<text x="706" y="294" class="name">Structured result</text>
+<text x="706" y="316" class="small">Finding and run status</text>
+<text x="942" y="294" class="name">Report export</text>
+<text x="942" y="316" class="small">Explicit and redacted</text>
+<path d="M40 355H1080" stroke="#c3d1db"/>
+<text x="40" y="380" class="small">The CLI and terminal UI present the same findings. A workflow submits each step to the same executor.</text>
+</svg>

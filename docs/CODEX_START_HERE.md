@@ -1,7 +1,7 @@
 # Codex Cloud — NYRA Handoff
 
 ## Do this first
-This repository is an **approved product blueprint, not a completed app**. No Rust build/test success has been established. Read AGENTS.md and the linked documents before implementation.
+The first TCP CLI slice passes local Windows x64 GNU checks. Consult the roadmap for remaining Phase 1 work. Read AGENTS.md and the linked documents before implementation.
 
 **Product:** NYRA (name selected after PocketOps planning). It is NOT primarily an AI agent. It is an offline-capable personal systems administration toolkit: Rust binary + human-friendly CLI/TUI + diagnostic workflows + discoverable command reference. Capri is visual/audio inspiration only.
 
@@ -11,7 +11,7 @@ This repository is an **approved product blueprint, not a completed app**. No Ru
 - 4 built-in editable cyberpunk themes and custom TOML themes, switchable at runtime (F9 proposed).
 - Startup/feedback animation and optional event sounds; ability to mute; no mandatory audio dependencies for headless use.
 - USB portable / GitHub Releases with separate Windows/Linux binaries and platform matrix tests.
-- Thai/English task-oriented search, favorites, history/privacy controls, command knowledge/recipes.
+- English task-oriented search, favorites, history/privacy controls, command knowledge/recipes.
 - Risk-aware execution, least privilege, no plaintext credentials, robust CLI contracts.
 - Agentless SSH for Linux/Solaris later, Windows remote operations and database health beyond basic network check later.
 - Documentation + tests + release process must remain reproducible.

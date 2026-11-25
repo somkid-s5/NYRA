@@ -21,7 +21,7 @@
 ## 3. หน้าตาและ UX
 แรงบันดาลใจจาก Capri: terminal แนว Cyberpunk ดูเท่ มีบุคลิก เสียงและลูกเล่น แต่ต้องสร้างด้วย Rust + Ratatui ใน Terminal จริง ไม่ใช่ภาพ UI ที่เขียนตามไม่ได้
 
-หน้าจอหลัก: Header → Search → Categories/Tools/Detail Form → Result Viewer → Shortcut Footer โดยปรับตามขนาดหน้าจอ (3/2/1 คอลัมน์) และยังใช้งานได้เมื่อ Terminal เล็ก ออกแบบสำหรับ Keyboard-first, ไม่ต้องจำคำสั่ง, มีคำอธิบายภาษาไทย/อังกฤษ
+หน้าจอหลัก: Header → Search → Categories/Tools/Detail Form → Result Viewer → Shortcut Footer โดยปรับตามขนาดหน้าจอ (3/2/1 คอลัมน์) และยังใช้งานได้เมื่อ Terminal เล็ก ออกแบบสำหรับ Keyboard-first, ไม่ต้องจำคำสั่ง, ใช้คำอธิบายภาษาอังกฤษ
 
 ## 4. เรื่องสี — ตกลงไว้ชัดเจนแล้ว
 **ไม่เลือกธีมเดียว:** ต้องมี **4 ธีม** ได้แก่
@@ -48,7 +48,7 @@
 
 ## 7. Command Library และการค้นหา
 ผู้ใช้พิมพ์คำอย่าง "เช็คพอร์ต", "ดิสก์เต็ม", "cert หมดอายุ", "oracle listener" แล้วหา Tool/คำสั่งที่เกี่ยวข้องได้ มีคำอธิบาย Syntax, ตัวอย่าง, ความเสี่ยง, ปุ่ม Copy และ Input Form
-ช่วงแรกใช้ Keywords + Thai/English Aliases + Fuzzy Search แบบ Offline ก่อน ไม่ต้องใช้ AI และไม่ต้องเสีย API Token
+ช่วงแรกใช้ Keywords + English Aliases + Fuzzy Search แบบ Offline ก่อน ไม่ต้องใช้ AI และไม่ต้องเสีย API Token
 
 ## 8. Workflows และ Incident Mode
 Workflow ตรวจ Web, Basic Server Health, Database Connectivity, Certificate, SFTP และ Linux Disk
