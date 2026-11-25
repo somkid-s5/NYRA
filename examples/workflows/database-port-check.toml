@@ -1,0 +1,34 @@
+id = "database-port-check"
+version = 1
+description = "Check TCP reachability to one authorized database host and port"
+timeout_seconds = 10
+
+[[inputs]]
+name = "host"
+value_type = "hostname"
+
+[[inputs]]
+name = "port"
+value_type = "port"
+
+[[inputs]]
+name = "timeout"
+value_type = "timeout_seconds"
+required = false
+default = 5
+
+[[steps]]
+id = "tcp"
+tool = "network.tcp"
+
+[[steps.parameters]]
+parameter = "host"
+source = { kind = "input", name = "host" }
+
+[[steps.parameters]]
+parameter = "port"
+source = { kind = "input", name = "port" }
+
+[[steps.parameters]]
+parameter = "timeout"
+source = { kind = "input", name = "timeout" }

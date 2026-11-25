@@ -1,0 +1,21 @@
+id = "local-system-health"
+version = 1
+description = "Collect basic local operating system and processor information"
+timeout_seconds = 30
+
+[[steps]]
+id = "system"
+tool = "system.info"
+
+[[steps]]
+id = "cpu"
+tool = "system.cpu"
+timeout_seconds = 30
+
+[steps.run_if]
+operator = "all"
+
+[[steps.run_if.predicates]]
+kind = "step_status"
+step_id = "system"
+equals = "completed"

@@ -1,6 +1,26 @@
+mod knowledge;
+pub mod reports;
+mod settings;
 mod tcp;
+mod theme;
+mod theme_files;
 mod tools;
 pub mod tui;
+pub mod workflow_definition;
+pub mod workflow_registry;
+pub mod workflow_runner;
+
+pub use knowledge::{
+    KNOWLEDGE_CARDS, KnowledgeCard, find_knowledge_card, rank_knowledge_cards,
+    search_knowledge_cards,
+};
+pub use reports::{
+    CsvReportDestination, HtmlReportDestination, JsonReportDestination, ReportExportError,
+};
+pub use theme_files::{
+    CustomThemeFileError, export_custom_theme_file, import_custom_theme_file,
+    validate_custom_theme_file,
+};
 
 use reqwest::Url;
 use serde::Serialize;
@@ -11,6 +31,7 @@ use std::{
     path::PathBuf,
     time::{Duration, Instant},
 };
+use url::Host;
 
 #[derive(Clone, Copy)]
 pub struct ToolMetadata {
@@ -127,6 +148,7 @@ impl fmt::Display for ExecutionBackend {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum InputKind {
     Host,
+    DnsHostname,
     IpAddress,
     Port,
     Url,
@@ -166,6 +188,7 @@ pub enum OutputSchema {
     MemoryData,
     DiskData,
     Sha256Data,
+    WebDiagnosticsData,
 }
 
 impl fmt::Display for OutputSchema {
@@ -182,6 +205,7 @@ impl fmt::Display for OutputSchema {
             Self::MemoryData => "MemoryData",
             Self::DiskData => "DiskData",
             Self::Sha256Data => "Sha256Data",
+            Self::WebDiagnosticsData => "WebDiagnosticsData",
         })
     }
 }
@@ -231,14 +255,7 @@ const TCP_OUTPUT_FIELDS: &[OutputField] = &[
     },
 ];
 
-const TCP_ALIASES: &[&str] = &[
-    "check port",
-    "test port",
-    "port connectivity",
-    "telnet",
-    "เช็คพอร์ต",
-    "เช็คพอร์ต 443",
-];
+const TCP_ALIASES: &[&str] = &["check port", "test port", "port connectivity", "telnet"];
 const TCP_KEYWORDS: &[&str] = &["tcp", "port", "connection", "network"];
 const TCP_SAMPLE_QUERIES: &[&str] = &["check port", "can I reach port 443", "test TCP connection"];
 const WINDOWS_LINUX_PLATFORMS: &[OperatingSystem] =
@@ -375,7 +392,7 @@ const CPU_INFO: ToolMetadata = ToolMetadata {
     required_privileges: &[],
     dependencies: &[],
     risk: RiskLevel::R0,
-    max_timeout_seconds: Some(5),
+    max_timeout_seconds: Some(15),
     max_targets: 1,
     max_parallel_operations: 1,
     max_output_items: Some(1024),
@@ -556,7 +573,7 @@ const DNS_INPUT_FIELDS: &[InputField] = &[
     InputField {
         name: "hostname",
         label: "Hostname",
-        kind: InputKind::Host,
+        kind: InputKind::DnsHostname,
         required: true,
         default: None,
         minimum: None,
@@ -761,6 +778,81 @@ const HTTP: ToolMetadata = ToolMetadata {
     status_explanation: "HEALTHY = HTTP 2xx; UNHEALTHY = another response status.",
     help: "Does not follow redirects or read response bodies. A redacted redirect destination is reported when the server provides one.",
     suggested_follow_ups: &["network.dns", "network.tcp", "security.tls"],
+};
+
+const WEB_DIAGNOSTICS_INPUT_FIELDS: &[InputField] = &[
+    InputField {
+        name: "url",
+        label: "HTTP or HTTPS URL",
+        kind: InputKind::Url,
+        required: true,
+        default: None,
+        minimum: None,
+        maximum: None,
+    },
+    InputField {
+        name: "timeout",
+        label: "Overall timeout (seconds)",
+        kind: InputKind::TimeoutSeconds,
+        required: true,
+        default: Some("15"),
+        minimum: Some(1),
+        maximum: Some(60),
+    },
+];
+const WEB_DIAGNOSTICS_OUTPUT_FIELDS: &[OutputField] = &[
+    OutputField {
+        name: "steps",
+        description: "DNS, TCP, TLS, and HTTP observations with skipped-step reasons",
+    },
+    OutputField {
+        name: "selected_address",
+        description: "peer address carried from TCP through later checks",
+    },
+    OutputField {
+        name: "next_checks",
+        description: "evidence-based follow-up suggestions",
+    },
+];
+const WEB_DIAGNOSTICS: ToolMetadata = ToolMetadata {
+    id: "workflow.web_diagnostics",
+    version: 1,
+    name: "Web Diagnostics",
+    description: "Trace one URL through DNS, TCP, TLS, and HTTP",
+    category: ToolCategory::Network,
+    keywords: &[
+        "workflow",
+        "web",
+        "website",
+        "diagnostics",
+        "layer",
+        "health",
+    ],
+    aliases: &[
+        "web diagnostics",
+        "website troubleshooting",
+        "why is this site down",
+    ],
+    sample_queries: &["diagnose https://example.com", "trace website connectivity"],
+    sample_inputs: &["https://example.com/health", "15"],
+    input_fields: WEB_DIAGNOSTICS_INPUT_FIELDS,
+    platforms: WINDOWS_LINUX_PLATFORMS,
+    platform_status: PlatformStatus::NeedsSmokeTest,
+    backend: ExecutionBackend::Native,
+    required_privileges: &[],
+    dependencies: &["system DNS configuration", "TLS root certificates"],
+    risk: RiskLevel::R1,
+    max_timeout_seconds: Some(60),
+    max_targets: 1,
+    max_parallel_operations: 1,
+    max_output_items: Some(4),
+    cancellable: true,
+    smoke_tested_platforms: &[],
+    output_fields: WEB_DIAGNOSTICS_OUTPUT_FIELDS,
+    output_schema: OutputSchema::WebDiagnosticsData,
+    status_explanation: "The finding summarizes the furthest verified protocol layer.",
+    help: "Uses one selected peer address for TCP, TLS, and HTTP. Redirects are reported for explicit follow-up.",
+    suggested_follow_ups: &["network.dns", "network.tcp", "security.tls", "web.http"],
 };
 
 const TLS_INPUT_FIELDS: &[InputField] = &[
@@ -1017,8 +1109,24 @@ pub const TOOLS: &[ToolMetadata] = &[
     SHA256,
 ];
 
+pub const CATALOG: &[ToolMetadata] = &[
+    TCP,
+    DNS,
+    REVERSE_DNS,
+    HTTP,
+    TLS,
+    INTERFACES,
+    PING,
+    SYSTEM_INFO,
+    CPU_INFO,
+    MEMORY,
+    DISK,
+    SHA256,
+    WEB_DIAGNOSTICS,
+];
+
 pub fn find_tool(id: &str) -> Option<&'static ToolMetadata> {
-    TOOLS.iter().find(|tool| tool.id == id)
+    CATALOG.iter().find(|tool| tool.id == id)
 }
 
 pub use tcp::TcpTarget;
@@ -1129,6 +1237,8 @@ enum ExecutionStatus {
 pub struct RunResult {
     pub schema_version: u8,
     pub tool_id: &'static str,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub observer: Option<String>,
     pub target: String,
     execution_status: ExecutionStatus,
     pub finding: Option<Finding>,
@@ -1172,6 +1282,7 @@ pub enum ToolInput {
     Dns(DnsTarget),
     ReverseDns(ReverseDnsTarget),
     Http(HttpTarget),
+    WebDiagnostics(WebDiagnosticsTarget),
     Tls(TlsTarget),
     Interfaces,
     Ping(PingTarget),
@@ -1189,6 +1300,7 @@ impl ToolInput {
             Self::Dns(_) => "network.dns",
             Self::ReverseDns(_) => "network.reverse_dns",
             Self::Http(_) => "web.http",
+            Self::WebDiagnostics(_) => "workflow.web_diagnostics",
             Self::Tls(_) => "security.tls",
             Self::Interfaces => "network.interfaces",
             Self::Ping(_) => "network.ping",
@@ -1206,6 +1318,7 @@ impl ToolInput {
             Self::Dns(target) => target.hostname.clone(),
             Self::ReverseDns(target) => target.address.to_string(),
             Self::Http(target) => tools::network::safe_url(&target.url),
+            Self::WebDiagnostics(target) => tools::network::safe_url(&target.url),
             Self::Tls(target) if target.host.contains(':') => {
                 format!("[{}]:{}", target.host, target.port)
             }
@@ -1232,6 +1345,7 @@ pub enum OutputData {
     Memory(MemoryData),
     Disk(DiskData),
     Sha256(Sha256Data),
+    WebDiagnostics(WebDiagnosticsData),
 }
 
 #[derive(Serialize)]
@@ -1320,7 +1434,45 @@ pub struct MemoryData {
 
 #[derive(Serialize)]
 pub struct DiskData {
+    pub availability: MeasurementAvailability,
     pub volumes: Vec<DiskVolume>,
+}
+
+#[derive(Serialize)]
+pub struct WebDiagnosticsData {
+    pub url: String,
+    pub hostname: String,
+    pub port: u16,
+    pub selected_address: Option<String>,
+    pub steps: Vec<WorkflowStep>,
+    pub summary: String,
+    pub next_checks: Vec<String>,
+}
+
+#[derive(Serialize)]
+pub struct WorkflowStep {
+    pub id: &'static str,
+    pub status: WorkflowStepStatus,
+    pub finding: Option<Finding>,
+    pub duration_ms: u128,
+    pub reason: Option<String>,
+    pub data: Option<serde_json::Value>,
+}
+
+#[derive(Clone, Copy, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum WorkflowStepStatus {
+    Completed,
+    Skipped,
+    Failed,
+    Cancelled,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum MeasurementAvailability {
+    Available,
+    Unavailable,
 }
 
 #[derive(Serialize)]
@@ -1345,11 +1497,15 @@ pub struct Sha256Target {
 }
 
 impl Sha256Target {
-    pub fn new(path: String, timeout_seconds: u64) -> Result<Self, &'static str> {
+    pub fn new(path: String, timeout_seconds: u64) -> Result<Self, InputError> {
         if path.trim().is_empty() || path.contains('\0') {
-            return Err("File path must not be empty or contain a null character");
+            return Err(InputError::new(
+                0,
+                "File path must not be empty or contain a null character",
+            ));
         }
-        validate_numeric_input("file.sha256", "timeout", timeout_seconds)?;
+        validate_numeric_input("file.sha256", "timeout", timeout_seconds)
+            .map_err(|message| InputError::new(1, message))?;
         Ok(Self {
             path: PathBuf::from(path),
             timeout_seconds,
@@ -1368,9 +1524,12 @@ impl DnsTarget {
         hostname: String,
         record_types: String,
         timeout_seconds: u64,
-    ) -> Result<Self, &'static str> {
+    ) -> Result<Self, InputError> {
         if hostname.parse::<IpAddr>().is_ok() || !tcp::valid_hostname(&hostname) {
-            return Err("Hostname must be a valid DNS name, not an IP address");
+            return Err(InputError::new(
+                0,
+                "Hostname must be a valid DNS name, not an IP address",
+            ));
         }
         let mut parsed = Vec::new();
         for kind in record_types
@@ -1380,16 +1539,23 @@ impl DnsTarget {
         {
             let kind = kind.to_ascii_uppercase();
             if !["A", "AAAA", "CNAME", "MX", "TXT"].contains(&kind.as_str()) {
-                return Err("Record types must be A, AAAA, CNAME, MX, or TXT");
+                return Err(InputError::new(
+                    1,
+                    "Record types must be A, AAAA, CNAME, MX, or TXT",
+                ));
             }
             if !parsed.contains(&kind) {
                 parsed.push(kind);
             }
         }
         if parsed.is_empty() || parsed.len() > 5 {
-            return Err("Choose between 1 and 5 DNS record types");
+            return Err(InputError::new(
+                1,
+                "Choose between 1 and 5 DNS record types",
+            ));
         }
-        validate_numeric_input("network.dns", "timeout", timeout_seconds)?;
+        validate_numeric_input("network.dns", "timeout", timeout_seconds)
+            .map_err(|message| InputError::new(2, message))?;
         Ok(Self {
             hostname,
             record_types: parsed,
@@ -1404,11 +1570,12 @@ pub struct ReverseDnsTarget {
 }
 
 impl ReverseDnsTarget {
-    pub fn new(address: String, timeout_seconds: u64) -> Result<Self, &'static str> {
+    pub fn new(address: String, timeout_seconds: u64) -> Result<Self, InputError> {
         let address = address
             .parse()
-            .map_err(|_| "Address must be a valid IPv4 or IPv6 address")?;
-        validate_numeric_input("network.reverse_dns", "timeout", timeout_seconds)?;
+            .map_err(|_| InputError::new(0, "Address must be a valid IPv4 or IPv6 address"))?;
+        validate_numeric_input("network.reverse_dns", "timeout", timeout_seconds)
+            .map_err(|message| InputError::new(1, message))?;
         Ok(Self {
             address,
             timeout_seconds,
@@ -1422,20 +1589,51 @@ pub struct HttpTarget {
 }
 
 impl HttpTarget {
-    pub fn new(value: String, timeout_seconds: u64) -> Result<Self, &'static str> {
+    pub fn new(value: String, timeout_seconds: u64) -> Result<Self, InputError> {
         if value.len() > 2048 || value.contains('\0') {
-            return Err("URL must be at most 2048 bytes and contain no null characters");
+            return Err(InputError::new(
+                0,
+                "URL must be at most 2048 bytes and contain no null characters",
+            ));
         }
-        let url = Url::parse(&value).map_err(|_| "URL must be a valid HTTP or HTTPS URL")?;
+        let url = Url::parse(&value)
+            .map_err(|_| InputError::new(0, "URL must be a valid HTTP or HTTPS URL"))?;
         if !matches!(url.scheme(), "http" | "https") || url.host_str().is_none() {
-            return Err("URL must use HTTP or HTTPS and include a hostname");
+            return Err(InputError::new(
+                0,
+                "URL must use HTTP or HTTPS and include a hostname",
+            ));
+        }
+        if url.port_or_known_default() == Some(0) {
+            return Err(InputError::new(0, "URL port must be between 1 and 65535"));
         }
         if !url.username().is_empty() || url.password().is_some() {
-            return Err("URL must not include username or password credentials");
+            return Err(InputError::new(
+                0,
+                "URL must not include username or password credentials",
+            ));
         }
-        validate_numeric_input("web.http", "timeout", timeout_seconds)?;
+        validate_numeric_input("web.http", "timeout", timeout_seconds)
+            .map_err(|message| InputError::new(1, message))?;
         Ok(Self {
             url,
+            timeout_seconds,
+        })
+    }
+}
+
+pub struct WebDiagnosticsTarget {
+    pub url: Url,
+    pub timeout_seconds: u64,
+}
+
+impl WebDiagnosticsTarget {
+    pub fn new(value: String, timeout_seconds: u64) -> Result<Self, InputError> {
+        let validated = HttpTarget::new(value, timeout_seconds)?;
+        validate_numeric_input("workflow.web_diagnostics", "timeout", timeout_seconds)
+            .map_err(|message| InputError::new(1, message))?;
+        Ok(Self {
+            url: validated.url,
             timeout_seconds,
         })
     }
@@ -1448,33 +1646,47 @@ pub struct TlsTarget {
 }
 
 impl TlsTarget {
-    pub fn new(host: String, port: u16, timeout_seconds: u64) -> Result<Self, &'static str> {
+    pub fn new(host: String, port: u16, timeout_seconds: u64) -> Result<Self, InputError> {
         let host = if host.contains("://") {
-            let url = Url::parse(&host)
-                .map_err(|_| "Host must be an IP address, DNS hostname, or HTTPS URL")?;
+            let url = Url::parse(&host).map_err(|_| {
+                InputError::new(0, "Host must be an IP address, DNS hostname, or HTTPS URL")
+            })?;
             if url.scheme() != "https"
-                || url.host_str().is_none()
+                || url.host().is_none()
                 || !url.username().is_empty()
                 || url.password().is_some()
             {
-                return Err(
+                return Err(InputError::new(
+                    0,
                     "Host URL must use HTTPS, include a hostname, and contain no credentials",
-                );
+                ));
             }
-            if url.port().is_some_and(|url_port| url_port != port) {
-                return Err("Port field must match the HTTPS URL port");
+            let effective_port = url.port_or_known_default().unwrap_or(443);
+            if effective_port != port {
+                return Err(InputError::new(
+                    1,
+                    "Port field must match the HTTPS URL port",
+                ));
             }
-            url.host_str()
-                .ok_or("HTTPS URL must include a hostname")?
-                .to_owned()
+            match url.host() {
+                Some(Host::Domain(domain)) => domain.to_owned(),
+                Some(Host::Ipv4(address)) => address.to_string(),
+                Some(Host::Ipv6(address)) => address.to_string(),
+                None => return Err(InputError::new(0, "HTTPS URL must include a hostname")),
+            }
         } else {
             host
         };
         if host.parse::<IpAddr>().is_err() && !tcp::valid_hostname(&host) {
-            return Err("Host must be an IP address, DNS hostname, or HTTPS URL");
+            return Err(InputError::new(
+                0,
+                "Host must be an IP address, DNS hostname, or HTTPS URL",
+            ));
         }
-        validate_numeric_input("security.tls", "port", port.into())?;
-        validate_numeric_input("security.tls", "timeout", timeout_seconds)?;
+        validate_numeric_input("security.tls", "port", port.into())
+            .map_err(|message| InputError::new(1, message))?;
+        validate_numeric_input("security.tls", "timeout", timeout_seconds)
+            .map_err(|message| InputError::new(2, message))?;
         Ok(Self {
             host,
             port,
@@ -1490,12 +1702,17 @@ pub struct PingTarget {
 }
 
 impl PingTarget {
-    pub fn new(host: String, count: u8, timeout_seconds: u64) -> Result<Self, &'static str> {
+    pub fn new(host: String, count: u8, timeout_seconds: u64) -> Result<Self, InputError> {
         if host.parse::<IpAddr>().is_err() && !tcp::valid_hostname(&host) {
-            return Err("Host must be an IPv4 address, IPv6 address, or DNS hostname");
+            return Err(InputError::new(
+                0,
+                "Host must be an IPv4 address, IPv6 address, or DNS hostname",
+            ));
         }
-        validate_numeric_input("network.ping", "count", count.into())?;
-        validate_numeric_input("network.ping", "timeout", timeout_seconds)?;
+        validate_numeric_input("network.ping", "count", count.into())
+            .map_err(|message| InputError::new(1, message))?;
+        validate_numeric_input("network.ping", "timeout", timeout_seconds)
+            .map_err(|message| InputError::new(2, message))?;
         Ok(Self {
             host,
             count,
@@ -1508,6 +1725,15 @@ impl PingTarget {
 pub struct InputError {
     pub field_index: usize,
     pub message: &'static str,
+}
+
+impl InputError {
+    pub(crate) fn new(field_index: usize, message: &'static str) -> Self {
+        Self {
+            field_index,
+            message,
+        }
+    }
 }
 
 pub(crate) fn validate_numeric_input(
@@ -1582,7 +1808,11 @@ fn validate_metadata_fields(tool: &ToolMetadata, fields: &[String]) -> Result<()
                     message: "Address must be a valid IPv4 or IPv6 address",
                 })?;
             }
-            InputKind::Host | InputKind::Url | InputKind::Path | InputKind::RecordTypes => {}
+            InputKind::Host
+            | InputKind::DnsHostname
+            | InputKind::Url
+            | InputKind::Path
+            | InputKind::RecordTypes => {}
         }
     }
     Ok(())
@@ -1611,18 +1841,7 @@ pub fn parse_tool_input(tool_id: &str, fields: &[String]) -> Result<ToolInput, I
                 field_index: 2,
                 message: "Timeout must be between 1 and 60 seconds",
             })?;
-            DnsTarget::new(fields[0].clone(), fields[1].clone(), timeout)
-                .map(ToolInput::Dns)
-                .map_err(|message| InputError {
-                    field_index: if message.starts_with("Hostname") {
-                        0
-                    } else if message.starts_with("Record") || message.starts_with("Choose") {
-                        1
-                    } else {
-                        2
-                    },
-                    message,
-                })
+            DnsTarget::new(fields[0].clone(), fields[1].clone(), timeout).map(ToolInput::Dns)
         }
         "network.reverse_dns" => {
             if fields.len() != 2 {
@@ -1635,12 +1854,7 @@ pub fn parse_tool_input(tool_id: &str, fields: &[String]) -> Result<ToolInput, I
                 field_index: 1,
                 message: "Timeout must be between 1 and 60 seconds",
             })?;
-            ReverseDnsTarget::new(fields[0].clone(), timeout)
-                .map(ToolInput::ReverseDns)
-                .map_err(|message| InputError {
-                    field_index: if message.starts_with("Address") { 0 } else { 1 },
-                    message,
-                })
+            ReverseDnsTarget::new(fields[0].clone(), timeout).map(ToolInput::ReverseDns)
         }
         "web.http" => {
             if fields.len() != 2 {
@@ -1653,12 +1867,14 @@ pub fn parse_tool_input(tool_id: &str, fields: &[String]) -> Result<ToolInput, I
                 field_index: 1,
                 message: "Timeout must be between 1 and 60 seconds",
             })?;
-            HttpTarget::new(fields[0].clone(), timeout)
-                .map(ToolInput::Http)
-                .map_err(|message| InputError {
-                    field_index: if message.starts_with("Timeout") { 1 } else { 0 },
-                    message,
-                })
+            HttpTarget::new(fields[0].clone(), timeout).map(ToolInput::Http)
+        }
+        "workflow.web_diagnostics" => {
+            let timeout = fields[1].parse::<u64>().map_err(|_| InputError {
+                field_index: 1,
+                message: "Timeout must be between 1 and 60 seconds",
+            })?;
+            WebDiagnosticsTarget::new(fields[0].clone(), timeout).map(ToolInput::WebDiagnostics)
         }
         "security.tls" => {
             if fields.len() != 3 {
@@ -1675,18 +1891,7 @@ pub fn parse_tool_input(tool_id: &str, fields: &[String]) -> Result<ToolInput, I
                 field_index: 2,
                 message: "Timeout must be between 1 and 60 seconds",
             })?;
-            TlsTarget::new(fields[0].clone(), port, timeout)
-                .map(ToolInput::Tls)
-                .map_err(|message| InputError {
-                    field_index: if message.starts_with("Host") {
-                        0
-                    } else if message.starts_with("Port") {
-                        1
-                    } else {
-                        2
-                    },
-                    message,
-                })
+            TlsTarget::new(fields[0].clone(), port, timeout).map(ToolInput::Tls)
         }
         "network.ping" => {
             if fields.len() != 3 {
@@ -1703,18 +1908,7 @@ pub fn parse_tool_input(tool_id: &str, fields: &[String]) -> Result<ToolInput, I
                 field_index: 2,
                 message: "Timeout must be between 1 and 60 seconds",
             })?;
-            PingTarget::new(fields[0].clone(), count, timeout)
-                .map(ToolInput::Ping)
-                .map_err(|message| InputError {
-                    field_index: if message.starts_with("Host") {
-                        0
-                    } else if message.starts_with("Ping") {
-                        1
-                    } else {
-                        2
-                    },
-                    message,
-                })
+            PingTarget::new(fields[0].clone(), count, timeout).map(ToolInput::Ping)
         }
         "system.info" if fields.is_empty() => Ok(ToolInput::SystemInfo),
         "system.info" => Err(InputError {
@@ -1735,12 +1929,7 @@ pub fn parse_tool_input(tool_id: &str, fields: &[String]) -> Result<ToolInput, I
                 field_index: 1,
                 message: "Timeout must be between 1 and 60 seconds",
             })?;
-            Sha256Target::new(fields[0].clone(), timeout)
-                .map(ToolInput::Sha256)
-                .map_err(|message| InputError {
-                    field_index: if message.starts_with("File") { 0 } else { 1 },
-                    message,
-                })
+            Sha256Target::new(fields[0].clone(), timeout).map(ToolInput::Sha256)
         }
         "network.tcp" => {
             if fields.len() != 3 {
@@ -1757,18 +1946,7 @@ pub fn parse_tool_input(tool_id: &str, fields: &[String]) -> Result<ToolInput, I
                 field_index: 2,
                 message: "Timeout must be between 1 and 60 seconds",
             })?;
-            TcpTarget::new(fields[0].clone(), port, timeout)
-                .map(ToolInput::Tcp)
-                .map_err(|message| InputError {
-                    field_index: if message.starts_with("Host") {
-                        0
-                    } else if message.starts_with("Port") {
-                        1
-                    } else {
-                        2
-                    },
-                    message,
-                })
+            TcpTarget::new(fields[0].clone(), port, timeout).map(ToolInput::Tcp)
         }
         _ => Err(InputError {
             field_index: 0,
@@ -1783,46 +1961,101 @@ pub async fn execute(
 ) -> RunResult {
     let started = Instant::now();
     let tool_id = input.tool_id();
+    tracing::debug!(tool_id, "diagnostic run started");
     let target = input.target();
     let tool = find_tool(tool_id);
     let max_timeout = tool.and_then(|tool| tool.max_timeout_seconds);
-    let outcome = if !tool.is_some_and(|tool| platform_is_supported(tool, current_platform())) {
-        Err(RunError::UnsupportedPlatform)
+    let (execution_status, finding, data, error) = if !tool
+        .is_some_and(|tool| platform_is_supported(tool, current_platform()))
+    {
+        (
+            ExecutionStatus::Failed,
+            None,
+            None,
+            Some(RunError::UnsupportedPlatform),
+        )
     } else {
-        tokio::select! {
-            biased;
-            signal = cancel => Err(signal.err().unwrap_or(RunError::Cancelled)),
-            result = async {
-                if let Some(seconds) = max_timeout {
-                    tokio::time::timeout(Duration::from_secs(seconds), run_tool(input))
-                        .await
-                        .unwrap_or(Err(RunError::DeadlineExceeded))
-                } else {
-                    run_tool(input).await
+        match input {
+            ToolInput::WebDiagnostics(target) => {
+                let workflow = tools::workflow::web_diagnostics(target, cancel).await;
+                let status = match workflow.error {
+                    Some(RunError::Cancelled) => ExecutionStatus::Cancelled,
+                    Some(_) => ExecutionStatus::Failed,
+                    None => ExecutionStatus::Completed,
+                };
+                (
+                    status,
+                    workflow.finding,
+                    Some(OutputData::WebDiagnostics(workflow.data)),
+                    workflow.error,
+                )
+            }
+            input => {
+                let outcome = tokio::select! {
+                    biased;
+                    signal = cancel => Err(signal.err().unwrap_or(RunError::Cancelled)),
+                    result = async {
+                        if let Some(seconds) = max_timeout {
+                            let deadline = Duration::from_secs(seconds)
+                                + if matches!(&input, ToolInput::Tcp(_)) {
+                                    Duration::from_millis(100)
+                                } else {
+                                    Duration::ZERO
+                                };
+                            tokio::time::timeout(deadline, run_tool(input))
+                                .await
+                                .unwrap_or(Err(RunError::DeadlineExceeded))
+                        } else {
+                            run_tool(input).await
+                        }
+                    } => result,
+                };
+                match outcome {
+                    Ok((finding, data)) => (ExecutionStatus::Completed, Some(finding), data, None),
+                    Err(RunError::Cancelled) => (
+                        ExecutionStatus::Cancelled,
+                        None,
+                        None,
+                        Some(RunError::Cancelled),
+                    ),
+                    Err(error) => (ExecutionStatus::Failed, None, None, Some(error)),
                 }
-            } => result,
+            }
         }
     };
-    let (execution_status, finding, data, error) = match outcome {
-        Ok((finding, data)) => (ExecutionStatus::Completed, Some(finding), data, None),
-        Err(RunError::Cancelled) => (
-            ExecutionStatus::Cancelled,
-            None,
-            None,
-            Some(RunError::Cancelled),
-        ),
-        Err(error) => (ExecutionStatus::Failed, None, None, Some(error)),
-    };
-    RunResult {
+    let result = RunResult {
         schema_version: 1,
         tool_id,
+        observer: sysinfo::System::host_name().ok(),
         target,
         execution_status,
         finding,
         data,
         duration_ms: started.elapsed().as_millis(),
         error,
+    };
+    if let Some(error) = result.error {
+        tracing::error!(tool_id, error_kind = ?error, "diagnostic execution failed");
+    } else if matches!(
+        result.finding,
+        Some(
+            Finding::Refused
+                | Finding::TimedOut
+                | Finding::Unreachable
+                | Finding::Inconclusive
+                | Finding::Unhealthy
+        )
+    ) {
+        tracing::warn!(tool_id, finding = ?result.finding, "diagnostic found an issue");
     }
+    tracing::info!(
+        tool_id = result.tool_id,
+        execution_status = result.execution_status_label(),
+        finding = ?result.finding,
+        duration_ms = result.duration_ms,
+        "diagnostic run completed"
+    );
+    result
 }
 
 fn current_platform() -> Option<OperatingSystem> {
@@ -1878,6 +2111,7 @@ async fn run_tool(input: ToolInput) -> Result<(Finding, Option<OutputData>), Run
                 };
                 (finding, Some(OutputData::Http(data)))
             }),
+        ToolInput::WebDiagnostics(_) => Err(RunError::InvalidInput),
         ToolInput::Tls(target) => tools::network::tls(target).await.map(|(trusted, data)| {
             (
                 if trusted {
@@ -1908,9 +2142,13 @@ async fn run_tool(input: ToolInput) -> Result<(Finding, Option<OutputData>), Run
         ToolInput::Memory => {
             tools::system::memory().map(|data| (Finding::Measured, Some(OutputData::Memory(data))))
         }
-        ToolInput::Disk => {
-            tools::system::disk().map(|data| (Finding::Measured, Some(OutputData::Disk(data))))
-        }
+        ToolInput::Disk => tools::system::disk().map(|data| {
+            let finding = match data.availability {
+                MeasurementAvailability::Available => Finding::Measured,
+                MeasurementAvailability::Unavailable => Finding::Inconclusive,
+            };
+            (finding, Some(OutputData::Disk(data)))
+        }),
         ToolInput::Sha256(target) => tools::system::sha256(target)
             .await
             .map(|data| (Finding::Computed, Some(OutputData::Sha256(data)))),
@@ -1963,6 +2201,10 @@ mod tests {
         assert_eq!(
             find_tool("network.ping").unwrap().backend,
             ExecutionBackend::OperatingSystem
+        );
+        assert_eq!(
+            find_tool("workflow.web_diagnostics").unwrap().output_schema,
+            OutputSchema::WebDiagnosticsData
         );
     }
 
@@ -2017,6 +2259,15 @@ mod tests {
         )
         .unwrap();
         assert_eq!(tls.target(), "example.com:443");
+        let workflow = parse_tool_input(
+            "workflow.web_diagnostics",
+            &[
+                "https://example.com/health?token=hidden".into(),
+                "15".into(),
+            ],
+        )
+        .unwrap();
+        assert_eq!(workflow.target(), "https://example.com/health");
         assert!(
             parse_tool_input(
                 "security.tls",
@@ -2045,6 +2296,54 @@ mod tests {
         )
         .err()
         .unwrap();
+        assert_eq!(error.field_index, 1);
+    }
+
+    #[test]
+    fn validation_errors_point_to_the_input_that_failed() {
+        let cases: [(&str, Vec<String>, usize); 5] = [
+            (
+                "network.dns",
+                vec!["127.0.0.1".into(), "A".into(), "5".into()],
+                0,
+            ),
+            (
+                "network.dns",
+                vec!["example.com".into(), "ANY".into(), "5".into()],
+                1,
+            ),
+            (
+                "network.ping",
+                vec!["example.com".into(), "11".into(), "5".into()],
+                1,
+            ),
+            (
+                "security.tls",
+                vec!["https://example.com:8443".into(), "443".into(), "5".into()],
+                1,
+            ),
+            (
+                "network.tcp",
+                vec!["bad:host".into(), "443".into(), "5".into()],
+                0,
+            ),
+        ];
+
+        for (tool_id, fields, expected_index) in cases {
+            let error = parse_tool_input(tool_id, &fields).err().unwrap();
+            assert_eq!(error.field_index, expected_index, "{tool_id}");
+        }
+    }
+
+    #[test]
+    fn tls_url_accepts_its_effective_default_port_and_ipv6_hosts() {
+        let target = TlsTarget::new("https://[::1]/health".into(), 443, 5).unwrap();
+        let input = ToolInput::Tls(target);
+        assert_eq!(input.target(), "[::1]:443");
+
+        let error = TlsTarget::new("https://example.com".into(), 8443, 5)
+            .err()
+            .unwrap();
         assert_eq!(error.field_index, 1);
     }
 }

@@ -4,6 +4,7 @@ version = "0.1.0-dev"
 edition = "2024"
 rust-version = "1.95"
 description = "Portable system diagnostics"
+license = "MIT"
 
 [dependencies]
 clap = { version = "4.5", features = ["derive"] }
@@ -18,8 +19,17 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 sha2 = "0.10.9"
 sysinfo = { version = "0.40.4", default-features = false, features = ["disk", "linux-tmpfs", "system"] }
+tempfile = "3.27.0"
+time = { version = "0.3.55", default-features = false, features = ["formatting", "std"] }
 tokio = { version = "1", features = ["fs", "io-util", "macros", "net", "process", "rt", "signal", "sync", "time"] }
+toml_edit = { version = "0.25.17", features = ["serde"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", default-features = false, features = ["env-filter", "fmt", "std"] }
 unicode-segmentation = "1.13.3"
 unicode-width = "0.2.3"
 tokio-rustls = "0.26.6"
+url = "2.5"
 x509-parser = "0.18.1"
+
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"

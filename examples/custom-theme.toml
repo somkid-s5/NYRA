@@ -1,0 +1,19 @@
+version = 1
+name = "Midnight Circuit"
+
+[colors]
+background = "#071B22"
+surface = "#0A3342"
+foreground = "#D8F7FF"
+muted = "#73A0AD"
+primary = "#00E5FF"
+accent = "#FF39C6"
+secondary = "#0A3342"
+border = "#176070"
+focus = "#00E5FF"
+selection = "#10404B"
+success = "#44E28F"
+warning = "#F5E634"
+error = "#FF5D64"
+disabled = "#55707A"
+progress = "#00C4FF"

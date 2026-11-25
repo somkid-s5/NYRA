@@ -15,7 +15,7 @@ use rustls::{
 use std::{
     ffi::OsString,
     fmt,
-    net::IpAddr,
+    net::{IpAddr, SocketAddr},
     process::Stdio,
     sync::{Arc, Mutex},
     time::{Duration, Instant},
@@ -99,8 +99,16 @@ pub(crate) async fn reverse_dns(
 }
 
 pub(crate) async fn http(url: Url, timeout_seconds: u64) -> Result<HttpData, RunError> {
+    http_with_peer(url, timeout_seconds, None).await
+}
+
+pub(crate) async fn http_with_peer(
+    url: Url,
+    timeout_seconds: u64,
+    peer: Option<SocketAddr>,
+) -> Result<HttpData, RunError> {
     let started = Instant::now();
-    let response = request_client(timeout_seconds)?
+    let response = request_client(timeout_seconds, url.host_str(), peer)?
         .get(url.clone())
         .send()
         .await
@@ -137,15 +145,25 @@ pub(crate) async fn http(url: Url, timeout_seconds: u64) -> Result<HttpData, Run
 }
 
 pub(crate) async fn tls(target: TlsTarget) -> Result<(bool, TlsData), RunError> {
+    tls_with_peer(target, None).await
+}
+
+pub(crate) async fn tls_with_peer(
+    target: TlsTarget,
+    peer: Option<SocketAddr>,
+) -> Result<(bool, TlsData), RunError> {
     let started = Instant::now();
     let deadline = tokio::time::Instant::now() + Duration::from_secs(target.timeout_seconds);
-    let socket = timeout_at(
-        deadline,
-        TcpStream::connect((target.host.as_str(), target.port)),
-    )
-    .await
-    .map_err(|_| RunError::DeadlineExceeded)?
-    .map_err(|_| RunError::SocketFailed)?;
+    let connect = async {
+        match peer {
+            Some(address) => TcpStream::connect(address).await,
+            None => TcpStream::connect((target.host.as_str(), target.port)).await,
+        }
+    };
+    let socket = timeout_at(deadline, connect)
+        .await
+        .map_err(|_| RunError::DeadlineExceeded)?
+        .map_err(|_| RunError::SocketFailed)?;
 
     // This verifier records the normal system validation result, then permits only
     // the certificate-inspection handshake to finish. No application data is sent.
@@ -292,12 +310,18 @@ fn parse_record_type(value: &str) -> Option<RecordType> {
     }
 }
 
-fn request_client(timeout_seconds: u64) -> Result<Client, RunError> {
-    Client::builder()
+fn request_client(
+    timeout_seconds: u64,
+    host: Option<&str>,
+    peer: Option<SocketAddr>,
+) -> Result<Client, RunError> {
+    let mut builder = Client::builder()
         .redirect(Policy::none())
-        .timeout(Duration::from_secs(timeout_seconds))
-        .build()
-        .map_err(|_| RunError::HttpClientFailed)
+        .timeout(Duration::from_secs(timeout_seconds));
+    if let (Some(host), Some(peer)) = (host, peer) {
+        builder = builder.no_proxy().resolve_to_addrs(host, &[peer]);
+    }
+    builder.build().map_err(|_| RunError::HttpClientFailed)
 }
 
 struct InspectingVerifier {

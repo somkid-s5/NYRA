@@ -1,5 +1,6 @@
 use crate::{
-    CpuData, DiskData, DiskVolume, MemoryData, RunError, Sha256Data, Sha256Target, SystemInfoData,
+    CpuData, DiskData, DiskVolume, MeasurementAvailability, MemoryData, RunError, Sha256Data,
+    Sha256Target, SystemInfoData,
 };
 use sha2::{Digest, Sha256};
 use std::time::Duration;
@@ -60,24 +61,40 @@ pub(crate) fn memory() -> Result<MemoryData, RunError> {
 
 pub(crate) fn disk() -> Result<DiskData, RunError> {
     let disks = Disks::new_with_refreshed_list().map_err(|_| RunError::SystemInfoUnavailable)?;
+    let volumes = disks
+        .iter()
+        .take(256)
+        .map(|disk| DiskVolume {
+            name: disk.name().to_string_lossy().into_owned(),
+            mount_point: disk.mount_point().to_string_lossy().into_owned(),
+            file_system: disk.file_system().to_string_lossy().into_owned(),
+            total_bytes: disk.total_space(),
+            available_bytes: disk.available_space(),
+        })
+        .collect::<Vec<_>>();
     Ok(DiskData {
-        volumes: disks
-            .iter()
-            .take(256)
-            .map(|disk| DiskVolume {
-                name: disk.name().to_string_lossy().into_owned(),
-                mount_point: disk.mount_point().to_string_lossy().into_owned(),
-                file_system: disk.file_system().to_string_lossy().into_owned(),
-                total_bytes: disk.total_space(),
-                available_bytes: disk.available_space(),
-            })
-            .collect(),
+        availability: if volumes.is_empty() {
+            MeasurementAvailability::Unavailable
+        } else {
+            MeasurementAvailability::Available
+        },
+        volumes,
     })
 }
 
 pub(crate) async fn sha256(target: Sha256Target) -> Result<Sha256Data, RunError> {
     let deadline = Instant::now() + Duration::from_secs(target.timeout_seconds);
-    let mut file = timeout_at(deadline, tokio::fs::File::open(&target.path))
+    let path_metadata = timeout_at(deadline, tokio::fs::metadata(&target.path))
+        .await
+        .map_err(|_| RunError::DeadlineExceeded)?
+        .map_err(|_| RunError::FileOpenFailed)?;
+    if !path_metadata.is_file() {
+        return Err(RunError::FileOpenFailed);
+    }
+    let mut options = tokio::fs::OpenOptions::new();
+    options.read(true);
+    configure_nonblocking_file_open(&mut options);
+    let mut file = timeout_at(deadline, options.open(&target.path))
         .await
         .map_err(|_| RunError::DeadlineExceeded)?
         .map_err(|_| RunError::FileOpenFailed)?;
@@ -110,3 +127,11 @@ pub(crate) async fn sha256(target: Sha256Target) -> Result<Sha256Data, RunError>
         sha256: format!("{:x}", hasher.finalize()),
     })
 }
+
+#[cfg(unix)]
+fn configure_nonblocking_file_open(options: &mut tokio::fs::OpenOptions) {
+    options.custom_flags(libc::O_NONBLOCK);
+}
+
+#[cfg(not(unix))]
+fn configure_nonblocking_file_open(_options: &mut tokio::fs::OpenOptions) {}

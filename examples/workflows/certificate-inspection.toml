@@ -1,0 +1,37 @@
+id = "certificate-inspection"
+version = 1
+description = "Inspect certificate details and system trust for one authorized endpoint"
+timeout_seconds = 15
+
+[[inputs]]
+name = "host"
+value_type = "hostname"
+
+[[inputs]]
+name = "port"
+value_type = "port"
+required = false
+default = 443
+
+[[inputs]]
+name = "timeout"
+value_type = "timeout_seconds"
+required = false
+default = 10
+
+[[steps]]
+id = "tls"
+tool = "security.tls"
+timeout_seconds = 15
+
+[[steps.parameters]]
+parameter = "host"
+source = { kind = "input", name = "host" }
+
+[[steps.parameters]]
+parameter = "port"
+source = { kind = "input", name = "port" }
+
+[[steps.parameters]]
+parameter = "timeout"
+source = { kind = "input", name = "timeout" }

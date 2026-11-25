@@ -1,0 +1,43 @@
+id = "network-diagnostics"
+version = 1
+description = "Resolve one DNS hostname and check one authorized TCP port"
+timeout_seconds = 15
+
+[[inputs]]
+name = "hostname"
+value_type = "dns_hostname"
+
+[[inputs]]
+name = "port"
+value_type = "port"
+
+[[inputs]]
+name = "timeout"
+value_type = "timeout_seconds"
+required = false
+default = 5
+
+[[steps]]
+id = "dns"
+tool = "network.dns"
+
+[[steps.parameters]]
+parameter = "hostname"
+source = { kind = "input", name = "hostname" }
+
+[[steps]]
+id = "tcp"
+tool = "network.tcp"
+run_if = { operator = "all", predicates = [{ kind = "step_finding", step_id = "dns", equals = "available" }] }
+
+[[steps.parameters]]
+parameter = "host"
+source = { kind = "step_output", step_id = "dns", output = "hostname" }
+
+[[steps.parameters]]
+parameter = "port"
+source = { kind = "input", name = "port" }
+
+[[steps.parameters]]
+parameter = "timeout"
+source = { kind = "input", name = "timeout" }

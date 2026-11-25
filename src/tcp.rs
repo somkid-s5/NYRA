@@ -1,11 +1,12 @@
-use crate::{Finding, RunError};
+use crate::{Finding, InputError, RunError};
 use std::{
     fmt,
-    future::Future,
-    io::{self, ErrorKind},
+    io::ErrorKind,
     net::{IpAddr, SocketAddr},
     time::Duration,
 };
+#[cfg(test)]
+use std::{future::Future, io};
 use tokio::{
     net::{TcpStream, lookup_host},
     time::{Instant, timeout_at},
@@ -20,12 +21,17 @@ pub struct TcpTarget {
 }
 
 impl TcpTarget {
-    pub fn new(host: String, port: u16, seconds: u64) -> Result<Self, &'static str> {
+    pub fn new(host: String, port: u16, seconds: u64) -> Result<Self, InputError> {
         if host.parse::<IpAddr>().is_err() && !valid_hostname(&host) {
-            return Err("Host must be an IPv4 address, IPv6 address, or DNS hostname");
+            return Err(InputError::new(
+                0,
+                "Host must be an IPv4 address, IPv6 address, or DNS hostname",
+            ));
         }
-        crate::validate_numeric_input("network.tcp", "port", port.into())?;
-        crate::validate_numeric_input("network.tcp", "timeout", seconds)?;
+        crate::validate_numeric_input("network.tcp", "port", port.into())
+            .map_err(|message| InputError::new(1, message))?;
+        crate::validate_numeric_input("network.tcp", "timeout", seconds)
+            .map_err(|message| InputError::new(2, message))?;
         Ok(Self {
             host,
             port,
@@ -60,12 +66,75 @@ pub(crate) fn valid_hostname(host: &str) -> bool {
 }
 
 pub(crate) async fn check(target: &TcpTarget) -> Result<Finding, RunError> {
+    check_with_peer(target).await.map(|(finding, _)| finding)
+}
+
+pub(crate) async fn check_with_peer(
+    target: &TcpTarget,
+) -> Result<(Finding, Option<SocketAddr>), RunError> {
     let deadline = Instant::now() + target.timeout;
+    let addresses = resolve_addresses(&target.host, target.port, deadline).await?;
+    check_resolved_addresses(&addresses, deadline).await
+}
+
+pub(crate) async fn check_addresses_with_peer(
+    addresses: &[SocketAddr],
+    timeout: Duration,
+) -> Result<(Finding, Option<SocketAddr>), RunError> {
+    check_resolved_addresses(addresses, Instant::now() + timeout).await
+}
+
+async fn check_resolved_addresses(
+    addresses: &[SocketAddr],
+    deadline: Instant,
+) -> Result<(Finding, Option<SocketAddr>), RunError> {
+    let mut finding = None;
+    let mut incomplete = addresses.len() > MAX_ADDRESSES;
+    for address in addresses.iter().copied().take(MAX_ADDRESSES) {
+        if Instant::now() >= deadline {
+            incomplete = true;
+            break;
+        }
+        let current = match timeout_at(deadline, TcpStream::connect(address)).await {
+            Ok(Ok(stream)) => {
+                let peer = stream.peer_addr().unwrap_or(address);
+                return Ok((Finding::Open, Some(peer)));
+            }
+            Err(_) => Finding::TimedOut,
+            Ok(Err(error)) => match error.kind() {
+                ErrorKind::ConnectionRefused => Finding::Refused,
+                ErrorKind::TimedOut => Finding::TimedOut,
+                ErrorKind::HostUnreachable | ErrorKind::NetworkUnreachable => Finding::Unreachable,
+                _ => Finding::Inconclusive,
+            },
+        };
+        if current == Finding::Inconclusive {
+            incomplete = true;
+            continue;
+        }
+        finding = Some(match finding {
+            Some(previous) if previous != current => Finding::Inconclusive,
+            _ => current,
+        });
+    }
+    match finding {
+        Some(_) if incomplete => Ok((Finding::Inconclusive, None)),
+        Some(finding) => Ok((finding, None)),
+        None if Instant::now() >= deadline => Err(RunError::DeadlineExceeded),
+        None => Err(RunError::SocketFailed),
+    }
+}
+
+pub(crate) async fn resolve_addresses(
+    host: &str,
+    port: u16,
+    deadline: Instant,
+) -> Result<Vec<SocketAddr>, RunError> {
     let mut addresses = Vec::new();
-    if let Ok(ip) = target.host.parse::<IpAddr>() {
-        addresses.push(SocketAddr::new(ip, target.port));
+    if let Ok(ip) = host.parse::<IpAddr>() {
+        addresses.push(SocketAddr::new(ip, port));
     } else {
-        let resolved = timeout_at(deadline, lookup_host((target.host.as_str(), target.port)))
+        let resolved = timeout_at(deadline, lookup_host((host, port)))
             .await
             .map_err(|_| RunError::DeadlineExceeded)?
             .map_err(|_| RunError::ResolutionFailed)?;
@@ -81,34 +150,10 @@ pub(crate) async fn check(target: &TcpTarget) -> Result<Finding, RunError> {
     if addresses.is_empty() {
         return Err(RunError::ResolutionFailed);
     }
-    let mut finding = None;
-    let mut incomplete = addresses.len() > MAX_ADDRESSES;
-    for address in addresses.into_iter().take(MAX_ADDRESSES) {
-        if Instant::now() >= deadline {
-            incomplete = true;
-            break;
-        }
-        let current = match attempt(deadline, TcpStream::connect(address)).await {
-            Some(Finding::Open) => return Ok(Finding::Open),
-            Some(finding) => finding,
-            None => {
-                incomplete = true;
-                continue;
-            }
-        };
-        finding = Some(match finding {
-            Some(previous) if previous != current => Finding::Inconclusive,
-            _ => current,
-        });
-    }
-    match finding {
-        Some(_) if incomplete => Ok(Finding::Inconclusive),
-        Some(finding) => Ok(finding),
-        None if Instant::now() >= deadline => Err(RunError::DeadlineExceeded),
-        None => Err(RunError::SocketFailed),
-    }
+    Ok(addresses)
 }
 
+#[cfg(test)]
 async fn attempt<T>(
     deadline: Instant,
     connect: impl Future<Output = io::Result<T>>,

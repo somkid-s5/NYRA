@@ -1,12 +1,17 @@
-# NYRA example settings — conceptual schema; implementation not present yet.
+# NYRA example settings.
+# Currently NYRA reads appearance theme/no-color/motion settings, knowledge-card favorites, and discovery preferences.
+# Custom themes are loaded from themes/custom.toml beside this config directory; see custom-theme.toml.
+# Portable mode is selected by portable.flag, not by this example's boolean.
 [general]
-language = "th"
+language = "en"
 startup_mode = "interactive"
 portable = true
 check_updates = false
 
 [appearance]
 theme = "neo-tokyo"
+# Set theme = "custom" to load themes/custom.toml.
+no_color = false
 animations = true
 animation_speed = "normal"
 reduced_motion = false
@@ -39,3 +44,11 @@ max_entries = 500
 [reports]
 format = "html"
 directory = "./reports"
+
+[knowledge]
+favorites = []
+
+[discovery]
+favorite_tools = []
+recent_tools = []
+record_recent = true
