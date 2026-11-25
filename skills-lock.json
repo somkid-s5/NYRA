@@ -1,0 +1,125 @@
+{
+  "version": 2,
+  "skills": {
+    "agent-cli-design": {
+      "source": "ggonzalez94/skills",
+      "commit": "e2a1bbb1c0e12a545658f9ad9020785fb6aa77bd",
+      "sourceType": "github",
+      "skillPath": "skills/agent-cli-design/SKILL.md",
+      "computedHash": "73022da86045d76b16157573e8f22a18843355f682803b5361fb40c81e78ea39",
+      "installMode": "copy"
+    },
+    "ask-matt": {
+      "source": "mattpocock/skills",
+      "commit": "5863806dd4e15c63174bee4e7515a4256792ecfa",
+      "sourceType": "github",
+      "skillPath": "skills/engineering/ask-matt/SKILL.md",
+      "computedHash": "7ff2383b40fe9d8f3e753d267d964fb2b44d120a948fd2a57c3b26ddfc318370",
+      "installMode": "copy"
+    },
+    "code-review": {
+      "source": "mattpocock/skills",
+      "commit": "5863806dd4e15c63174bee4e7515a4256792ecfa",
+      "sourceType": "github",
+      "skillPath": "skills/engineering/code-review/SKILL.md",
+      "computedHash": "ce86b40a3d1648a0018b712f0c70704e6c2316b2a9b9e915ab116916a31273dc",
+      "installMode": "copy"
+    },
+    "code-security": {
+      "source": "semgrep/skills",
+      "commit": "68177b8830f96cd9d10dacbb14dde2566360503d",
+      "sourceType": "github",
+      "skillPath": "skills/code-security/SKILL.md",
+      "computedHash": "dad7ce15629249464d389f7b846e467f9cdb87073c644def32f3c11d9d21b1ab",
+      "installMode": "copy"
+    },
+    "diagram-design": {
+      "source": "cathrynlavery/diagram-design",
+      "commit": "f6db0decea96de66b901331a0f79a8d4b147ebae",
+      "sourceType": "github",
+      "skillPath": "skills/diagram-design/SKILL.md",
+      "computedHash": "131d0484db90409d4663ba9c7236a7ffd8708cf66abf33a53c746e4e3170abc3",
+      "installMode": "copy"
+    },
+    "implement": {
+      "source": "mattpocock/skills",
+      "commit": "5863806dd4e15c63174bee4e7515a4256792ecfa",
+      "sourceType": "github",
+      "skillPath": "skills/engineering/implement/SKILL.md",
+      "computedHash": "560465496ad0669329993bfdd0604e5c93b5c2446309a76f486040010b063908",
+      "installMode": "copy"
+    },
+    "implement-spec": {
+      "source": "mattpocock/skills",
+      "commit": "5863806dd4e15c63174bee4e7515a4256792ecfa",
+      "sourceType": "github",
+      "skillPath": "skills/engineering/implement-spec/SKILL.md",
+      "computedHash": "c3474ef320861d793e8b30d41fbdd2cb0ceaa1081bb5c81b7f26c455eb776573",
+      "installMode": "copy"
+    },
+    "rust-cli-clap": {
+      "source": "BjornMelin/dev-skills",
+      "commit": "27907632a4f03a6558337513eed0b57daa84353c",
+      "sourceType": "github",
+      "skillPath": "skills/rust-cli-clap/SKILL.md",
+      "computedHash": "c163583bab95f698aa81a2b17dd65e6cb381738b696134dd87a47fdb61af6d32",
+      "installMode": "copy"
+    },
+    "rust-expert": {
+      "source": "BjornMelin/dev-skills",
+      "commit": "27907632a4f03a6558337513eed0b57daa84353c",
+      "sourceType": "github",
+      "skillPath": "skills/rust-expert/SKILL.md",
+      "computedHash": "a212128049ce343ca1c0044456fa6d3283ef017591ca57b2fdba587e5b6658fb",
+      "installMode": "copy"
+    },
+    "rust-tui-ratatui": {
+      "source": "BjornMelin/dev-skills",
+      "commit": "27907632a4f03a6558337513eed0b57daa84353c",
+      "sourceType": "github",
+      "skillPath": "skills/rust-tui-ratatui/SKILL.md",
+      "computedHash": "df05e3ec42166f2de04117eb317ba61c0cc34cda5a88b4c75fa8b2a6d9e3da53",
+      "installMode": "copy"
+    },
+    "semgrep": {
+      "source": "semgrep/skills",
+      "commit": "68177b8830f96cd9d10dacbb14dde2566360503d",
+      "sourceType": "github",
+      "skillPath": "skills/semgrep/SKILL.md",
+      "computedHash": "6cdc130d58362cc9c01451194ea0714d755087a261f91b089c14e1cdf92b79df",
+      "installMode": "copy"
+    },
+    "tdd": {
+      "source": "mattpocock/skills",
+      "commit": "5863806dd4e15c63174bee4e7515a4256792ecfa",
+      "sourceType": "github",
+      "skillPath": "skills/engineering/tdd/SKILL.md",
+      "computedHash": "e3e0f78ff1c2d52ffefa0378baa1e80e129d359288cf9a56f4e59afcd2aac86c",
+      "installMode": "copy"
+    },
+    "technical-writing": {
+      "source": "BjornMelin/dev-skills",
+      "commit": "27907632a4f03a6558337513eed0b57daa84353c",
+      "sourceType": "github",
+      "skillPath": "skills/technical-writing/SKILL.md",
+      "computedHash": "b99f7d9c356f3d6f4a0a96e6f5cf788465ef797dd5df24503dfb06df03786fd0",
+      "installMode": "copy"
+    },
+    "to-spec": {
+      "source": "mattpocock/skills",
+      "commit": "5863806dd4e15c63174bee4e7515a4256792ecfa",
+      "sourceType": "github",
+      "skillPath": "skills/engineering/to-spec/SKILL.md",
+      "computedHash": "eb934b5eda9523c7853a2741544bd4721ee1bea471f5a04f8397827f67bdbdda",
+      "installMode": "copy"
+    },
+    "to-tickets": {
+      "source": "mattpocock/skills",
+      "commit": "5863806dd4e15c63174bee4e7515a4256792ecfa",
+      "sourceType": "github",
+      "skillPath": "skills/engineering/to-tickets/SKILL.md",
+      "computedHash": "17496514c92954f68eacdf2b1221e2ddb39fa231b83f03c70bc7d4422f704b2d",
+      "installMode": "copy"
+    }
+  }
+}
